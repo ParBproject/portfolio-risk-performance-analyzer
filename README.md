@@ -2,7 +2,7 @@
 
 **Question:** how does a diversified ETF portfolio compare with an equity benchmark (SPY) in return, risk and drawdowns?
 
-Stage 1 of a staged build: real data pipeline → SQLite → equal-weight portfolio vs SPY → Streamlit dashboard. Stage 2 adds an analysis-ready SQL layer; stage 3 adds Sortino, Calmar, beta and rolling metrics. (Minimum-variance optimisation comes later.)
+Stage 1 of a staged build: real data pipeline → SQLite → equal-weight portfolio vs SPY → Streamlit dashboard. Stage 2 adds an analysis-ready SQL layer; stage 3 adds Sortino, Calmar, beta and rolling metrics; stage 4 adds a rolling minimum-variance portfolio. 
 
 ![dashboard](docs/dashboard.png)
 
@@ -82,6 +82,28 @@ Caveats: stress windows are fixed approximate SPY peak-to-trough dates (they are
   - Its worst 1-year return was −28.7% (window ending 2009-03-03), against −47.4% for SPY (ending 2009-03-05).
   - Its best was +44.3% (ending 2010-03-09), against +77.5% for SPY (ending 2021-03-23).
 - **Rolling 1-year correlation with SPY** ranged from 0.32 (ending 2017-12-14) to 0.92 (ending 2008-10-30). The portfolio moved most like SPY during the 2008 crash, when diversification was needed most.
+
+## Stage 4: minimum-variance portfolio
+- **Estimation:** at each month-end close, the sample covariance of the trailing **252** daily returns (1 year, a standard window that was not tuned) goes into a long-only, fully invested minimum-variance solve. `src/prpa/optimize.py` solves it exactly by trying every support set (63 for 6 assets), so no solver dependency is needed.
+- **Application:** weights are applied from the **next** trading day and drift until the next month-end. Costs are the same 10 bp one-way × turnover, plus 10 bp on the initial purchase.
+- **Fair comparison:** min variance, equal weight (rerun on the same dates) and SPY are all measured over 2007-02-01 to 2026-09-30 (4,947 days), the period after the first full estimation window.
+- **Tests** (`tests/test_min_variance.py`): hand-checked 2-asset cases, the long-only constraint binding, a brute-force grid check, weights sum to 1 and are ≥ 0, no-lookahead (scrambling future returns leaves past weights unchanged), next-day application, and a pin on the results.
+
+### Stage 4 findings (`results/stage4.json`, `results/stage4_weights.csv`)
+| 2007-02-01 to 2026-09-30 | Min variance | Equal weight | SPY |
+|---|---|---|---|
+| Annualised return | 3.31% | 6.59% | 10.89% |
+| Annualised vol | 5.38% | 11.26% | 19.58% |
+| Sharpe | 0.35 | 0.49 | 0.55 |
+| Sortino | 0.48 | 0.69 | 0.77 |
+| Max drawdown | −19.7% (trough 2022-10-20) | −32.2% | −55.2% |
+| Calmar | 0.17 | 0.20 | 0.20 |
+| Beta vs SPY | 0.09 | 0.47 | 1.00 |
+
+- **Lowest risk, worst risk-adjusted return.** Min variance did what it is built to do: volatility was about half of equal weight's and drawdown was smallest. But its Sharpe (0.35) was the lowest of the three.
+- **It is essentially an AGG portfolio.** The average weights were AGG 88.2%, SPY 7.3%, GLD 1.7%, TLT 1.4%, EFA 1.2% and VNQ 0.2%, with about 2.6 holdings above 1% on average. The latest estimate (2026-09-30) is 100% AGG. The optimiser concentrates in the lowest-volatility asset, so "minimum variance" here means "mostly bonds", not diversification.
+- **Its worst drawdown came in 2022, not 2008,** because bonds were the risk in the rate shock.
+- **Turnover and costs:** min variance averaged 3.7% per month (44% a year), with a largest single rebalance of 95.8%, against 2.6% per month (31% a year) for equal weight. Total cost drag was 0.97% vs 0.71% over the period, about 5 bp vs 4 bp a year, so costs did not explain the gap.
 
 ## Project layout
 `src/prpa/` (config, ingest, clean, db, metrics, portfolio, analysis) · `sql/` schema + queries · `data/raw/` frozen CSVs · `app/` Streamlit · `tests/` pytest.
