@@ -1,0 +1,7 @@
+ticker,asset_class,first_date,last_date,n_days
+AGG,US aggregate investment-grade bonds,2006-01-03,2026-09-30,5218
+EFA,Developed ex-US equity,2006-01-03,2026-09-30,5218
+GLD,Gold,2006-01-03,2026-09-30,5218
+SPY,US large-cap equity,2006-01-03,2026-09-30,5218
+TLT,Long-term US Treasuries,2006-01-03,2026-09-30,5218
+VNQ,US real estate (REITs),2006-01-03,2026-09-30,5218

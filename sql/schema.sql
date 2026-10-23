@@ -1,3 +1,7 @@
+DROP VIEW IF EXISTS v_drawdown;
+DROP VIEW IF EXISTS v_annual;
+DROP VIEW IF EXISTS v_monthly;
+DROP VIEW IF EXISTS v_returns;
 DROP TABLE IF EXISTS prices;
 DROP TABLE IF EXISTS assets;
 DROP TABLE IF EXISTS risk_free;
@@ -11,3 +15,9 @@ CREATE TABLE prices (
     PRIMARY KEY (date, ticker)
 );
 CREATE TABLE risk_free (date TEXT PRIMARY KEY, rf_daily REAL NOT NULL);
+DROP TABLE IF EXISTS strategy_returns;
+-- Net daily returns of strategies computed in Python (prpa.portfolio.backtest).
+CREATE TABLE strategy_returns (
+    date TEXT NOT NULL, strategy TEXT NOT NULL, ret REAL NOT NULL,
+    PRIMARY KEY (date, strategy)
+);
