@@ -1,0 +1,58 @@
+{
+  "source": "Yahoo Finance via yfinance 1.7.0",
+  "adjustment": "auto_adjust=False; 'Adj Close' is split- and dividend-adjusted",
+  "downloaded_utc": "2026-10-23T14:42:56+00:00",
+  "start": "2006-01-01",
+  "end_exclusive": "2026-10-01",
+  "files": {
+    "SPY.csv": {
+      "ticker": "SPY",
+      "rows": 5218,
+      "first": "2006-01-03",
+      "last": "2026-09-30",
+      "sha256": "2ae7db411e087389420583b10e76f93b0705a0886becc384f432600b819fd59b"
+    },
+    "EFA.csv": {
+      "ticker": "EFA",
+      "rows": 5218,
+      "first": "2006-01-03",
+      "last": "2026-09-30",
+      "sha256": "954b69ee7bfab5833854f7c1e20f09c5c7a5694f5f5326d02366a39c2ac80d0d"
+    },
+    "AGG.csv": {
+      "ticker": "AGG",
+      "rows": 5218,
+      "first": "2006-01-03",
+      "last": "2026-09-30",
+      "sha256": "0149edde36bf8a42737b498dc7fcd45f9c8b1267aa5d07f4e0dcfb919d6bcbf8"
+    },
+    "TLT.csv": {
+      "ticker": "TLT",
+      "rows": 5218,
+      "first": "2006-01-03",
+      "last": "2026-09-30",
+      "sha256": "ec4bbf2abe44eb5e09dcf739c532ba579a6644f6010ca3273396fafed6596410"
+    },
+    "GLD.csv": {
+      "ticker": "GLD",
+      "rows": 5218,
+      "first": "2006-01-03",
+      "last": "2026-09-30",
+      "sha256": "2583d81a31f2c476035df4a9b01f04b84abe6874f66340d9d8d8feae79b080a8"
+    },
+    "VNQ.csv": {
+      "ticker": "VNQ",
+      "rows": 5218,
+      "first": "2006-01-03",
+      "last": "2026-09-30",
+      "sha256": "cdac183f7f1483a1085ff74eb6d6e1a57297612102e0525e10733626899edcef"
+    },
+    "IRX.csv": {
+      "ticker": "^IRX",
+      "rows": 5215,
+      "first": "2006-01-03",
+      "last": "2026-09-30",
+      "sha256": "032ad2a3f91cbc06f25b0af21f34b9a2e19a9fb352b7709e6a949e2f11c3b788"
+    }
+  }
+}

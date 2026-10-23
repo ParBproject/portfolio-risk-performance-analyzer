@@ -1,0 +1,148 @@
+{
+  "period": {
+    "first_return_date": "2006-01-04",
+    "last_date": "2026-09-30",
+    "n_days": 5217
+  },
+  "assumptions": {
+    "universe": {
+      "SPY": "US large-cap equity",
+      "EFA": "Developed ex-US equity",
+      "AGG": "US aggregate investment-grade bonds",
+      "TLT": "Long-term US Treasuries",
+      "GLD": "Gold",
+      "VNQ": "US real estate (REITs)"
+    },
+    "weights": "equal (1/6 each)",
+    "rebalance": "monthly, last trading day",
+    "cost_bps_one_way": 10.0,
+    "risk_free": "13-week T-bill (^IRX) / 100 / 252, daily"
+  },
+  "cleaning": {
+    "rows_raw": 5218,
+    "missing_before": 0,
+    "missing_after_ffill": 0,
+    "rows_clean": 5218
+  },
+  "avg_risk_free_annual": 0.016939472875464826,
+  "equal_weight": {
+    "total_return": 3.119821435971578,
+    "annualized_return": 0.07078148696696784,
+    "annualized_vol": 0.11114297955403826,
+    "sharpe": 0.5185995636578585,
+    "max_drawdown": -0.32161737242257893,
+    "max_drawdown_trough": "2009-03-09"
+  },
+  "spy": {
+    "total_return": 7.787534922432716,
+    "annualized_return": 0.11068830402554064,
+    "annualized_vol": 0.19197166759483592,
+    "sharpe": 0.5547643999669993,
+    "max_drawdown": -0.5518944690664586,
+    "max_drawdown_trough": "2009-03-09"
+  },
+  "per_asset": {
+    "SPY": {
+      "total_return": 7.787534922432716,
+      "annualized_return": 0.11068830402554064,
+      "annualized_vol": 0.19197166759483592,
+      "sharpe": 0.5547643999669993,
+      "max_drawdown": -0.5518944690664586,
+      "max_drawdown_trough": "2009-03-09"
+    },
+    "EFA": {
+      "total_return": 2.090092749207285,
+      "annualized_return": 0.05600846426392425,
+      "annualized_vol": 0.21295824084651627,
+      "sharpe": 0.28301252473421024,
+      "max_drawdown": -0.6103731209900025,
+      "max_drawdown_trough": "2009-03-09"
+    },
+    "AGG": {
+      "total_return": 0.8040419886329946,
+      "annualized_return": 0.028910599259902803,
+      "annualized_vol": 0.052789669661747494,
+      "sharpe": 0.24550158663823285,
+      "max_drawdown": -0.18432926635180635,
+      "max_drawdown_trough": "2022-10-20"
+    },
+    "TLT": {
+      "total_return": 0.6440127968684681,
+      "annualized_return": 0.02430431687741863,
+      "annualized_vol": 0.1474267869240888,
+      "sharpe": 0.1216489267438095,
+      "max_drawdown": -0.48351140557948014,
+      "max_drawdown_trough": "2023-10-19"
+    },
+    "GLD": {
+      "total_return": 6.169427786357103,
+      "annualized_return": 0.09982351336027162,
+      "annualized_vol": 0.18511955376666384,
+      "sharpe": 0.5154312589906842,
+      "max_drawdown": -0.45555012734879075,
+      "max_drawdown_trough": "2015-12-17"
+    },
+    "VNQ": {
+      "total_return": 2.5008464555238117,
+      "annualized_return": 0.06239380692992014,
+      "annualized_vol": 0.28854131056684523,
+      "sharpe": 0.29570746889999955,
+      "max_drawdown": -0.730655219864812,
+      "max_drawdown_trough": "2009-03-06"
+    }
+  },
+  "correlation_daily": {
+    "SPY": {
+      "SPY": 1.0,
+      "EFA": 0.8835,
+      "AGG": 0.0036,
+      "TLT": -0.3013,
+      "GLD": 0.0679,
+      "VNQ": 0.744
+    },
+    "EFA": {
+      "SPY": 0.8835,
+      "EFA": 1.0,
+      "AGG": 0.0423,
+      "TLT": -0.2779,
+      "GLD": 0.1762,
+      "VNQ": 0.6841
+    },
+    "AGG": {
+      "SPY": 0.0036,
+      "EFA": 0.0423,
+      "AGG": 1.0,
+      "TLT": 0.7133,
+      "GLD": 0.2115,
+      "VNQ": 0.0202
+    },
+    "TLT": {
+      "SPY": -0.3013,
+      "EFA": -0.2779,
+      "AGG": 0.7133,
+      "TLT": 1.0,
+      "GLD": 0.1601,
+      "VNQ": -0.1535
+    },
+    "GLD": {
+      "SPY": 0.0679,
+      "EFA": 0.1762,
+      "AGG": 0.2115,
+      "TLT": 0.1601,
+      "GLD": 1.0,
+      "VNQ": 0.0582
+    },
+    "VNQ": {
+      "SPY": 0.744,
+      "EFA": 0.6841,
+      "AGG": 0.0202,
+      "TLT": -0.1535,
+      "GLD": 0.0582,
+      "VNQ": 1.0
+    }
+  },
+  "corr_portfolio_spy": 0.8135675716426896,
+  "rebalances": 249,
+  "avg_monthly_turnover": 0.02545533814328737,
+  "total_cost_drag_approx": 0.007338379197678556
+}
