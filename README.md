@@ -8,7 +8,9 @@
 
 Python · pandas · NumPy · SQLite · Plotly · Streamlit · pytest · ruff · MIT license. Real data only; no number in this README is invented, and each one cites the results file it comes from.
 
-**Live demo:** https://parbproject.github.io/portfolio-risk-performance-analyzer/ (a static build of the results: risk table, growth, drawdown, rolling Sharpe, min-variance weights, stress periods; every number is generated from the committed results by `python -m prpa.site`).
+**Interactive dashboard (Streamlit):** https://parb-portfolio-analyzer.streamlit.app/
+
+**Static demo:** https://parbproject.github.io/portfolio-risk-performance-analyzer/ (a static build of the results: risk table, growth, drawdown, rolling Sharpe, min-variance weights, stress periods; every number is generated from the committed results by `python -m prpa.site`).
 
 ![dashboard](docs/dashboard.png)
 
