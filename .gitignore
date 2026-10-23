@@ -1,0 +1,6 @@
+.venv/
+__pycache__/
+*.egg-info/
+data/prices.sqlite
+.pytest_cache/
+.ruff_cache/
