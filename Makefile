@@ -3,7 +3,7 @@ PY ?= python
 install: ; $(PY) -m pip install -e ".[dev]"
 data: ; $(PY) -m prpa.ingest        # re-download (changes hashes; normally not needed)
 db: ; $(PY) -m prpa.db
-results: ; $(PY) -m prpa.analysis
+results: ; $(PY) -m prpa.analysis && $(PY) -m prpa.stage3
 lint: ; ruff check . && ruff format --check .
 test: ; pytest -q
 app: ; streamlit run app/streamlit_app.py
