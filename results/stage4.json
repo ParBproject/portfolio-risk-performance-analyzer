@@ -1,0 +1,100 @@
+{
+  "period": {
+    "first": "2007-02-01",
+    "last": "2026-09-30",
+    "n_days": 4947
+  },
+  "assumptions": {
+    "window_days": 252,
+    "covariance": "sample, daily returns",
+    "constraints": "long-only, fully invested",
+    "rebalance": "monthly",
+    "cost_bps_one_way": 10.0
+  },
+  "min_variance": {
+    "total_return": 0.8964655845976566,
+    "annualized_return": 0.033138406225456274,
+    "annualized_vol": 0.05382108064406666,
+    "sharpe": 0.3489082982064438,
+    "sortino": 0.4794132729492033,
+    "max_drawdown": -0.1972720677037535,
+    "calmar": 0.16798326601017194,
+    "max_drawdown_trough": "2022-10-20",
+    "beta_vs_spy": 0.0920564129318721
+  },
+  "equal_weight": {
+    "total_return": 2.4989043611190995,
+    "annualized_return": 0.06587893652462795,
+    "annualized_vol": 0.11264379340067009,
+    "sharpe": 0.48717392117784264,
+    "sortino": 0.6872543670026537,
+    "max_drawdown": -0.3216173724225796,
+    "calmar": 0.20483637444207548,
+    "max_drawdown_trough": "2009-03-09",
+    "beta_vs_spy": 0.46952857645916707
+  },
+  "spy": {
+    "total_return": 6.604630055451668,
+    "annualized_return": 0.10887370721589362,
+    "annualized_vol": 0.19582784267273984,
+    "sharpe": 0.5477968217862564,
+    "sortino": 0.7713920561196704,
+    "max_drawdown": -0.5518944690664597,
+    "calmar": 0.19727269128109878,
+    "max_drawdown_trough": "2009-03-09"
+  },
+  "turnover": {
+    "min_variance": {
+      "n_rebalances": 236,
+      "avg_turnover": 0.03693716724271251,
+      "max_turnover": 0.9584490973818843,
+      "annual_turnover": 0.4440523974648471,
+      "total_cost": 0.009717171469280153,
+      "annual_cost_drag": 0.0004949923610791588
+    },
+    "equal_weight": {
+      "n_rebalances": 236,
+      "avg_turnover": 0.025805582636314724,
+      "max_turnover": 0.11111359806021437,
+      "annual_turnover": 0.3102303639674367,
+      "total_cost": 0.007090117502170273,
+      "annual_cost_drag": 0.0003611703275817483
+    }
+  },
+  "mv_weights": {
+    "average": {
+      "SPY": 0.07260294336677617,
+      "EFA": 0.01212010568335134,
+      "AGG": 0.8821104500890989,
+      "TLT": 0.014060726562763337,
+      "GLD": 0.01672344671033164,
+      "VNQ": 0.0023823275876786094
+    },
+    "min": {
+      "SPY": 0.0,
+      "EFA": 0.0,
+      "AGG": 0.4399241379919365,
+      "TLT": 0.0,
+      "GLD": 0.0,
+      "VNQ": 0.0
+    },
+    "max": {
+      "SPY": 0.23148783320987312,
+      "EFA": 0.10290347510213732,
+      "AGG": 1.0,
+      "TLT": 0.3686371371578453,
+      "GLD": 0.09992607059173415,
+      "VNQ": 0.1103820342202393
+    },
+    "latest_date": "2026-09-30",
+    "latest": {
+      "SPY": 0.0,
+      "EFA": 0.0,
+      "AGG": 1.0,
+      "TLT": 0.0,
+      "GLD": 0.0,
+      "VNQ": 0.0
+    },
+    "avg_n_holdings_over_1pct": 2.5822784810126582
+  }
+}
