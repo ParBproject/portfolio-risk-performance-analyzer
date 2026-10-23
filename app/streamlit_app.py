@@ -90,13 +90,13 @@ with tab_perf:
         table.style.format(
             {c: "{:.1%}" for c in pct} | {c: "{:.2f}" for c in ("Sharpe", "Sortino", "Calmar")}
         ),
-        use_container_width=True,
+        width="stretch",
     )
-    st.plotly_chart(lines(dashboard.growth(rets), "Growth of $1"), use_container_width=True)
-    st.plotly_chart(lines(dashboard.drawdowns(rets), "Drawdown", ".0%"), use_container_width=True)
+    st.plotly_chart(lines(dashboard.growth(rets), "Growth of $1"), width="stretch")
+    st.plotly_chart(lines(dashboard.drawdowns(rets), "Drawdown", ".0%"), width="stretch")
     rs = dashboard.rolling_sharpe(rets, rf_all)
     if len(rs):
-        st.plotly_chart(lines(rs, "Rolling 1-year Sharpe"), use_container_width=True)
+        st.plotly_chart(lines(rs, "Rolling 1-year Sharpe"), width="stretch")
     else:
         st.info("Rolling Sharpe needs at least 252 days in the selected range.")
 
@@ -111,15 +111,11 @@ with tab_w:
         labels={"x": "", "y": "Weight"},
         color_discrete_sequence=[COLORS[who]],
     )
-    st.plotly_chart(
-        styled(bar.update_layout(yaxis_tickformat=".0%"), 280), use_container_width=True
-    )
+    st.plotly_chart(styled(bar.update_layout(yaxis_tickformat=".0%"), 280), width="stretch")
     hist = w.loc[pd.Timestamp(start) : pd.Timestamp(end)]
     if len(hist):
         area = px.area(hist, title="Target weights at each month-end")
-        st.plotly_chart(
-            styled(area.update_layout(yaxis_tickformat=".0%")), use_container_width=True
-        )
+        st.plotly_chart(styled(area.update_layout(yaxis_tickformat=".0%")), width="stretch")
     st.caption(
         "Min variance: long-only, fully invested, trailing 252-day sample covariance, "
         "re-estimated each month-end and applied from the next day."
@@ -132,21 +128,21 @@ with tab_stress:
         stress.style.format(
             {c: "{:.1f}%" for c in stress.columns if c not in ("start_date", "end_date")}
         ),
-        use_container_width=True,
+        width="stretch",
     )
     st.caption("Equal weight here is the stage 1 series from 2006; values are % returns.")
     st.subheader("SPY correlation: calm vs stress (sql/correlation_by_regime.sql)")
     rc = dashboard.regime_corr()
     st.plotly_chart(
         styled(px.bar(rc, barmode="group", color_discrete_sequence=[GREY, EMERALD]), 300),
-        use_container_width=True,
+        width="stretch",
     )
     yb = dashboard.sql_result("stock_bond_corr_by_year").set_index("year")
     fig = lines(
         yb.rename(columns={"spy_tlt_corr": "SPY–TLT", "spy_agg_corr": "SPY–AGG"}),
         "Stock–bond correlation by year (sql/stock_bond_corr_by_year.sql)",
     )
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, width="stretch")
     corr = d["asset_rets"].loc[rets.index].corr()
     heat = px.imshow(
         corr,
@@ -156,6 +152,6 @@ with tab_stress:
         color_continuous_scale=["#111827", EMERALD],
         title="Daily ETF correlations (selected dates)",
     )
-    st.plotly_chart(styled(heat, 420), use_container_width=True)
+    st.plotly_chart(styled(heat, 420), width="stretch")
 
 st.caption(f"Data: {config.ROOT.name} · one historical path; see README for limitations.")
