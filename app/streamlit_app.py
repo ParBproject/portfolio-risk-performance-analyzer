@@ -1,5 +1,7 @@
 """Streamlit dashboard: equal-weight ETF portfolio vs SPY. Run: make app"""
 
+import json
+
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
@@ -114,4 +116,39 @@ st.plotly_chart(styled(fig), use_container_width=True)
 st.caption(
     "Sharpe uses the 13-week T-bill (^IRX) as the risk-free rate. Past performance over "
     "one historical path; see README for limitations."
+)
+
+# ---- Stage 4: minimum-variance portfolio (full sample, from results/stage4*.*) ----
+st.header("Minimum-variance portfolio (stage 4)")
+st.caption(
+    "Long-only, fully invested minimum-variance weights, re-estimated each month-end from "
+    "the trailing 252 daily returns only, applied from the next day, 10 bp one-way costs. "
+    "Full common sample from results/stage4.json (not affected by the date filter above)."
+)
+s4 = json.loads((config.ROOT / "results" / "stage4.json").read_text())
+cols = ["annualized_return", "annualized_vol", "sharpe", "sortino", "max_drawdown", "calmar"]
+t4 = pd.DataFrame(
+    {
+        "Min variance": s4["min_variance"],
+        "Equal weight": s4["equal_weight"],
+        "SPY": s4["spy"],
+    }
+).T[cols]
+st.dataframe(
+    t4.astype(float).style.format(
+        {c: "{:.2f}" for c in ("sharpe", "sortino", "calmar")}
+        | {c: "{:.2%}" for c in ("annualized_return", "annualized_vol", "max_drawdown")}
+    )
+)
+mvw = pd.read_csv(
+    config.ROOT / "results" / "stage4_weights.csv", index_col="date", parse_dates=True
+)
+fig = px.area(mvw, title="Minimum-variance target weights at each month-end")
+fig.update_layout(yaxis_tickformat=".0%", legend_title_text="")
+st.plotly_chart(styled(fig), use_container_width=True)
+st.write(
+    "Latest estimate ("
+    + s4["mv_weights"]["latest_date"]
+    + "): "
+    + ", ".join(f"{k} {v:.1%}" for k, v in s4["mv_weights"]["latest"].items())
 )
