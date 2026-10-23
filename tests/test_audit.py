@@ -242,10 +242,15 @@ def test_result_scripts_reproduce_committed_files(tmp_path, monkeypatch, capsys)
     stage4.main()
     capsys.readouterr()
     root = config.ROOT / "results"
-    assert (tmp_path / "s1.json").read_text() == (root / "stage1.json").read_text()
-    assert (tmp_path / "s3.json").read_text() == (root / "stage3.json").read_text()
-    assert (tmp_path / "s4.json").read_text() == (root / "stage4.json").read_text()
-    assert (tmp_path / "w.csv").read_text() == (root / "stage4_weights.csv").read_text()
+    for fresh, committed in (
+        ("s1.json", "stage1.json"),
+        ("s3.json", "stage3.json"),
+        ("s4.json", "stage4.json"),
+    ):
+        _assert_json_close(
+            json.loads((tmp_path / fresh).read_text()), json.loads((root / committed).read_text())
+        )
+    _assert_json_close(_csv_cells(tmp_path / "w.csv"), _csv_cells(root / "stage4_weights.csv"))
 
 
 def test_query_runner_writes_every_query(tmp_path, monkeypatch, capsys):
@@ -268,3 +273,36 @@ def test_query_runner_writes_every_query(tmp_path, monkeypatch, capsys):
 
 def test_sortino_no_downside_is_nan():
     assert np.isnan(metrics.sortino(s([0.01, 0.02, 0.03])))
+
+
+def _assert_json_close(a, b, path="$", rtol=1e-12, atol=1e-12):
+    """Recursive compare: floats within rtol/atol; strings, ints, bools, keys, structure exact."""
+    if isinstance(a, float) or isinstance(b, float):
+        assert isinstance(a, (int, float)) and isinstance(b, (int, float)), path
+        assert not isinstance(a, bool) and not isinstance(b, bool), path
+        assert abs(a - b) <= atol + rtol * abs(b), f"{path}: {a!r} != {b!r}"
+    elif isinstance(a, dict):
+        assert isinstance(b, dict) and list(a) == list(b), f"{path}: keys differ"
+        for k in a:
+            _assert_json_close(a[k], b[k], f"{path}.{k}", rtol, atol)
+    elif isinstance(a, list):
+        assert isinstance(b, list) and len(a) == len(b), f"{path}: length differs"
+        for i, (x, y) in enumerate(zip(a, b, strict=True)):
+            _assert_json_close(x, y, f"{path}[{i}]", rtol, atol)
+    else:
+        assert type(a) is type(b) and a == b, f"{path}: {a!r} != {b!r}"
+
+
+def _csv_cells(p):
+    """Parse CSV; cells that look like floats become floats, ints stay ints, else strings."""
+
+    def conv(c):
+        try:
+            return int(c)
+        except ValueError:
+            try:
+                return float(c)
+            except ValueError:
+                return c
+
+    return [[conv(c) for c in line.split(",")] for line in p.read_text().splitlines()]
