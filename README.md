@@ -2,7 +2,7 @@
 
 **Question:** how does a diversified ETF portfolio compare with an equity benchmark (SPY) in return, risk and drawdowns?
 
-Stage 1 of a staged build: real data pipeline → SQLite → equal-weight portfolio vs SPY → Streamlit dashboard. Stage 2 adds an analysis-ready SQL layer; stage 3 adds Sortino, Calmar, beta and rolling metrics; stage 4 adds a rolling minimum-variance portfolio. 
+Stage 1 of a staged build: real data pipeline → SQLite → equal-weight portfolio vs SPY → Streamlit dashboard. Stage 2 adds an analysis-ready SQL layer; stage 3 adds Sortino, Calmar, beta and rolling metrics; stage 4 adds a rolling minimum-variance portfolio; stage 5 finishes the dashboard. 
 
 ![dashboard](docs/dashboard.png)
 
@@ -105,8 +105,23 @@ Caveats: stress windows are fixed approximate SPY peak-to-trough dates (they are
 - **Its worst drawdown came in 2022, not 2008,** because bonds were the risk in the rate shock.
 - **Turnover and costs:** min variance averaged 3.7% per month (44% a year), with a largest single rebalance of 95.8%, against 2.6% per month (31% a year) for equal weight. Total cost drag was 0.97% vs 0.71% over the period, about 5 bp vs 4 bp a year, so costs did not explain the gap.
 
+## Stage 5: dashboard
+`make app` runs `streamlit run app/streamlit_app.py`. The app has a dark/emerald theme (`.streamlit/config.toml`) and a responsive layout: the sidebar collapses on phones and chart legends move below the plots.
+
+- **Sidebar:** pick any of the three strategies (min variance, equal weight, SPY) and a start/end date. All strategies run continuously from 2007-02-01, the first full 252-day estimation window, and the dates **slice** the results without restarting the strategies.
+- **Performance tab:** risk summary table (total and annualised return, vol, Sharpe, Sortino, max drawdown, Calmar), growth of $1, drawdown, and rolling 1-year Sharpe.
+- **Weights tab:** current target weights as of the end date, plus a stacked area chart of the month-end target weights over time.
+- **Stress & correlation tab:** stress-period returns, SPY's calm vs stress correlations, and stock–bond correlation by year, all read from the saved SQL results in `results/sql/`, plus a heatmap of ETF correlations for the selected dates.
+- **Code:** the data logic lives in `src/prpa/dashboard.py`, a set of pure, tested functions, so the UI file contains layout only. `tests/test_dashboard.py` covers the helpers and includes a Streamlit `AppTest` smoke test that runs the app, changes the strategy selection and checks for exceptions.
+
+| | Desktop | Mobile |
+|---|---|---|
+| Performance | ![](docs/dashboard-desktop-performance.png) | ![](docs/dashboard-mobile-performance.png) |
+| Weights | ![](docs/dashboard-desktop-weights.png) | ![](docs/dashboard-mobile-weights.png) |
+| Stress & correlation | ![](docs/dashboard-desktop-stress.png) | ![](docs/dashboard-mobile-stress.png) |
+
 ## Project layout
-`src/prpa/` (config, ingest, clean, db, metrics, portfolio, analysis) · `sql/` schema + queries · `data/raw/` frozen CSVs · `app/` Streamlit · `tests/` pytest.
+`src/prpa/` (config, ingest, clean, db, metrics, portfolio, analysis) · `sql/` schema + queries · `data/raw/` frozen CSVs · `app/` Streamlit (helpers in `src/prpa/dashboard.py`) · `tests/` pytest.
 
 ## License
 MIT
