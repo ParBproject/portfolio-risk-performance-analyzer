@@ -1,0 +1,11 @@
+regime,other,n_days,corr
+calm,AGG,4471,-0.026400
+stress,AGG,746,0.033700
+calm,EFA,4471,0.848000
+stress,EFA,746,0.925200
+calm,GLD,4471,0.124000
+stress,GLD,746,-0.028800
+calm,TLT,4471,-0.248900
+stress,TLT,746,-0.402900
+calm,VNQ,4471,0.686300
+stress,VNQ,746,0.804900
