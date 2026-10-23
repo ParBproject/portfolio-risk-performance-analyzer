@@ -6,6 +6,8 @@
 
 Python · pandas · NumPy · SQLite · Plotly · Streamlit · pytest · ruff · MIT license. Real data only; no number in this README is invented, and each one cites the results file it comes from.
 
+**Live demo:** https://parbproject.github.io/portfolio-risk-performance-analyzer/ (a static build of the results: risk table, growth, drawdown, rolling Sharpe, min-variance weights, stress periods; every number is generated from the committed results by `python -m prpa.site`).
+
 ![dashboard](docs/dashboard.png)
 
 ---
@@ -182,9 +184,10 @@ The audit found two real edge-case bugs, both now fixed: Sharpe returned about 1
 ## Project layout
 ```
 src/prpa/      config, ingest, clean, db, metrics, portfolio, optimize,
-               analysis (stage 1), stage3, stage4, dashboard (app helpers)
+               analysis (stage 1), stage3, stage4, dashboard (app helpers), site (static demo)
 sql/           schema.sql, views.sql, 11 analysis queries
-scripts/       run_queries.py (runs every query -> results/sql/)
+scripts/       run_queries.py (runs every query -> results/sql/), deploy_pages.sh
+site/          static live demo (index.html, app.js, style.css, generated data.json)
 data/raw/      frozen Yahoo CSVs (+ data/manifest.json with SHA-256)
 results/       stage1.json, stage3.json, stage4.json, stage4_weights.csv, sql/*.csv
 app/           streamlit_app.py
