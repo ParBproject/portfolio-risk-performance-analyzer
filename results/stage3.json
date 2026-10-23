@@ -1,0 +1,46 @@
+{
+  "period": {
+    "first": "2006-01-04",
+    "last": "2026-09-30"
+  },
+  "equal_weight": {
+    "total_return": 3.119821435971578,
+    "annualized_return": 0.07078148696696784,
+    "annualized_vol": 0.11114297955403826,
+    "sharpe": 0.5185995636578585,
+    "sortino": 0.7326825712552774,
+    "max_drawdown": -0.32161737242257893,
+    "calmar": 0.2200797998995115,
+    "max_drawdown_trough": "2009-03-09",
+    "beta_vs_spy": 0.471019109818601
+  },
+  "spy": {
+    "total_return": 7.787534922432716,
+    "annualized_return": 0.11068830402554064,
+    "annualized_vol": 0.19197166759483592,
+    "sharpe": 0.5547643999669993,
+    "sortino": 0.7814997264124568,
+    "max_drawdown": -0.5518944690664586,
+    "calmar": 0.20056063292819784,
+    "max_drawdown_trough": "2009-03-09"
+  },
+  "rolling_1y": {
+    "n_windows": 4966,
+    "ew_beat_spy_return_share": 0.3324607329842932,
+    "ew_beat_spy_sharpe_share": 0.46375352396294806,
+    "ew_return_min": -0.28650303736570093,
+    "ew_return_min_end": "2009-03-03",
+    "ew_return_max": 0.44326883668839123,
+    "ew_return_max_end": "2010-03-09",
+    "spy_return_min": -0.47354116726684425,
+    "spy_return_min_end": "2009-03-05",
+    "spy_return_max": 0.7750448420810219,
+    "spy_return_max_end": "2021-03-23",
+    "ew_negative_share": 0.14981876761981475,
+    "spy_negative_share": 0.1703584373741442,
+    "corr_ew_spy_min": 0.31570476321564633,
+    "corr_ew_spy_min_end": "2017-12-14",
+    "corr_ew_spy_max": 0.9181908044963614,
+    "corr_ew_spy_max_end": "2008-10-30"
+  }
+}
