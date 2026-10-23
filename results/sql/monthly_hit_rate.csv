@@ -1,0 +1,4 @@
+regime,n_months,ew_beat_rate,ew_avg_pct,spy_avg_pct
+SPY down month,82,0.743900,-1.842000,-3.781000
+SPY up month,167,0.227500,1.819000,3.305000
+All months,249,0.397600,0.613000,0.971000
