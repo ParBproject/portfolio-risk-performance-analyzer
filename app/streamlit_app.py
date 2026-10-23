@@ -1,154 +1,161 @@
-"""Streamlit dashboard: equal-weight ETF portfolio vs SPY. Run: make app"""
-
-import json
+"""Streamlit dashboard. Run: make app"""
 
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 import streamlit as st
 
-from prpa import config, metrics
-from prpa.analysis import run
+from prpa import config, dashboard
 
-EMERALD, BG = "#10B981", "#06080b"
+EMERALD, BG, GREY, AMBER = "#10B981", "#06080b", "#9ca3af", "#f59e0b"
+COLORS = {"Min variance": AMBER, "Equal weight": EMERALD, "SPY": GREY}
+
 st.set_page_config(page_title="Portfolio Risk & Performance Analyzer", layout="wide")
+st.markdown(
+    """<style>
+    .block-container {padding-top: 2rem; max-width: 1200px;}
+    @media (max-width: 640px) {
+      .block-container {padding: 3.5rem 0.6rem 1rem;}
+      h1 {font-size: 1.5rem !important;}
+      h2, h3 {font-size: 1.15rem !important;}
+    }
+    </style>""",
+    unsafe_allow_html=True,
+)
 st.title("Portfolio Risk & Performance Analyzer")
 st.caption(
-    "Equal-weight 6-ETF portfolio (monthly rebalance, 10 bp one-way costs) vs SPY. "
-    "Real Yahoo Finance data, frozen snapshot through 2026-09-30."
+    "Six-ETF portfolios vs SPY on real Yahoo Finance data (frozen snapshot to 2026-09-30). "
+    "Monthly rebalancing, 10 bp one-way costs, T-bill (^IRX) risk-free rate."
 )
 
 
 @st.cache_data
-def full():
-    return run()
+def data():
+    return dashboard.load()
 
 
-base = full()["rets"].index
-c1, c2 = st.columns(2)
-start = c1.date_input("Start", base[0].date(), min_value=base[0].date(), max_value=base[-1].date())
-end = c2.date_input("End", base[-1].date(), min_value=base[0].date(), max_value=base[-1].date())
-if start >= end:
-    st.error("Start must be before end.")
-    st.stop()
-r = run(str(start), str(end))  # re-runs the backtest from the chosen start (fresh buy-in)
-port, bench, rf, rets = r["port"], r["bench"], r["rf"], r["rets"]
+d = data()
+rets_all, rf_all = d["rets"], d["rf"]
+lo, hi = rets_all.index[0].date(), rets_all.index[-1].date()
 
-st.subheader("Weights")
-st.write(", ".join(f"{t} {1 / len(rets.columns):.1%} ({c})" for t, c in config.UNIVERSE.items()))
-
-rows = {"Equal weight": metrics.summary(port, rf), "SPY": metrics.summary(bench, rf)}
-tbl = pd.DataFrame(rows).T[
-    [
-        "total_return",
-        "annualized_return",
-        "annualized_vol",
-        "sharpe",
-        "sortino",
-        "max_drawdown",
-        "calmar",
-    ]
-]
-st.subheader("Risk summary")
-st.dataframe(
-    tbl.style.format(
-        {
-            "sharpe": "{:.2f}",
-            "sortino": "{:.2f}",
-            "calmar": "{:.2f}",
-            "total_return": "{:.1%}",
-            "annualized_return": "{:.2%}",
-            "annualized_vol": "{:.2%}",
-            "max_drawdown": "{:.1%}",
-        }
+with st.sidebar:
+    st.header("Controls")
+    chosen = st.multiselect("Strategies", dashboard.STRATEGIES, default=list(dashboard.STRATEGIES))
+    start = st.date_input("Start", lo, min_value=lo, max_value=hi)
+    end = st.date_input("End", hi, min_value=lo, max_value=hi)
+    st.caption(
+        "Strategies run continuously from 2007-02-01 (first full 252-day window); "
+        "the dates only slice the results."
     )
-)
+
+if not chosen:
+    st.warning("Pick at least one strategy.")
+    st.stop()
+try:
+    rets = dashboard.filter_dates(rets_all[chosen], start, end)
+    table = dashboard.risk_table(rets, rf_all)
+except ValueError as e:
+    st.error(str(e))
+    st.stop()
 
 
-def styled(fig):
+def styled(fig, height=340):
     fig.update_layout(
         template="plotly_dark",
         paper_bgcolor=BG,
         plot_bgcolor=BG,
-        height=360,
-        margin=dict(l=10, r=10, t=40, b=10),
+        height=height,
+        margin=dict(l=8, r=8, t=40, b=60),
+        legend=dict(orientation="h", yanchor="top", y=-0.12, x=0, title_text=""),
     )
     return fig
 
 
-g = pd.DataFrame({"Equal weight": metrics.cumulative(port), "SPY": metrics.cumulative(bench)})
-fig = go.Figure()
-fig.add_scatter(x=g.index, y=g["Equal weight"], name="Equal weight", line_color=EMERALD)
-fig.add_scatter(x=g.index, y=g["SPY"], name="SPY", line_color="#9ca3af")
-st.plotly_chart(styled(fig.update_layout(title="Growth of $1")), use_container_width=True)
+def lines(df, title, fmt=None):
+    fig = go.Figure()
+    for c in df.columns:
+        fig.add_scatter(x=df.index, y=df[c], name=c, line_color=COLORS.get(c, EMERALD))
+    fig.update_layout(title=title)
+    if fmt:
+        fig.update_layout(yaxis_tickformat=fmt)
+    return styled(fig)
 
-dd = pd.DataFrame({"Equal weight": metrics.drawdown(port), "SPY": metrics.drawdown(bench)})
-fig = go.Figure()
-fig.add_scatter(
-    x=dd.index, y=dd["Equal weight"], name="Equal weight", line_color=EMERALD, fill="tozeroy"
-)
-fig.add_scatter(x=dd.index, y=dd["SPY"], name="SPY", line_color="#9ca3af")
-st.plotly_chart(
-    styled(fig.update_layout(title="Drawdown", yaxis_tickformat=".0%")), use_container_width=True
-)
 
-rs = pd.DataFrame(
-    {
-        "Equal weight": metrics.rolling_sharpe(port, rf),
-        "SPY": metrics.rolling_sharpe(bench, rf),
-    }
-).dropna()
-fig = go.Figure()
-fig.add_scatter(x=rs.index, y=rs["Equal weight"], name="Equal weight", line_color=EMERALD)
-fig.add_scatter(x=rs.index, y=rs["SPY"], name="SPY", line_color="#9ca3af")
-st.plotly_chart(styled(fig.update_layout(title="Rolling 1-year Sharpe")), use_container_width=True)
+tab_perf, tab_w, tab_stress = st.tabs(["Performance", "Weights", "Stress & correlation"])
 
-corr = metrics.correlation_matrix(rets)
-fig = px.imshow(
-    corr,
-    text_auto=".2f",
-    color_continuous_scale=["#111827", EMERALD],
-    zmin=-1,
-    zmax=1,
-    title="Daily return correlations",
-)
-st.plotly_chart(styled(fig), use_container_width=True)
-st.caption(
-    "Sharpe uses the 13-week T-bill (^IRX) as the risk-free rate. Past performance over "
-    "one historical path; see README for limitations."
-)
-
-# ---- Stage 4: minimum-variance portfolio (full sample, from results/stage4*.*) ----
-st.header("Minimum-variance portfolio (stage 4)")
-st.caption(
-    "Long-only, fully invested minimum-variance weights, re-estimated each month-end from "
-    "the trailing 252 daily returns only, applied from the next day, 10 bp one-way costs. "
-    "Full common sample from results/stage4.json (not affected by the date filter above)."
-)
-s4 = json.loads((config.ROOT / "results" / "stage4.json").read_text())
-cols = ["annualized_return", "annualized_vol", "sharpe", "sortino", "max_drawdown", "calmar"]
-t4 = pd.DataFrame(
-    {
-        "Min variance": s4["min_variance"],
-        "Equal weight": s4["equal_weight"],
-        "SPY": s4["spy"],
-    }
-).T[cols]
-st.dataframe(
-    t4.astype(float).style.format(
-        {c: "{:.2f}" for c in ("sharpe", "sortino", "calmar")}
-        | {c: "{:.2%}" for c in ("annualized_return", "annualized_vol", "max_drawdown")}
+with tab_perf:
+    st.subheader("Risk summary")
+    pct = ["Total return", "Ann. return", "Ann. vol", "Max DD"]
+    st.dataframe(
+        table.style.format(
+            {c: "{:.1%}" for c in pct} | {c: "{:.2f}" for c in ("Sharpe", "Sortino", "Calmar")}
+        ),
+        use_container_width=True,
     )
-)
-mvw = pd.read_csv(
-    config.ROOT / "results" / "stage4_weights.csv", index_col="date", parse_dates=True
-)
-fig = px.area(mvw, title="Minimum-variance target weights at each month-end")
-fig.update_layout(yaxis_tickformat=".0%", legend_title_text="")
-st.plotly_chart(styled(fig), use_container_width=True)
-st.write(
-    "Latest estimate ("
-    + s4["mv_weights"]["latest_date"]
-    + "): "
-    + ", ".join(f"{k} {v:.1%}" for k, v in s4["mv_weights"]["latest"].items())
-)
+    st.plotly_chart(lines(dashboard.growth(rets), "Growth of $1"), use_container_width=True)
+    st.plotly_chart(lines(dashboard.drawdowns(rets), "Drawdown", ".0%"), use_container_width=True)
+    rs = dashboard.rolling_sharpe(rets, rf_all)
+    if len(rs):
+        st.plotly_chart(lines(rs, "Rolling 1-year Sharpe"), use_container_width=True)
+    else:
+        st.info("Rolling Sharpe needs at least 252 days in the selected range.")
+
+with tab_w:
+    who = st.selectbox("Strategy", chosen, key="wsel")
+    w = d["weights"][who]
+    when, cur = dashboard.weights_as_of(w, end)
+    st.subheader(f"Current weights ({when.date()})")
+    bar = px.bar(
+        x=cur.index,
+        y=cur.values,
+        labels={"x": "", "y": "Weight"},
+        color_discrete_sequence=[COLORS[who]],
+    )
+    st.plotly_chart(
+        styled(bar.update_layout(yaxis_tickformat=".0%"), 280), use_container_width=True
+    )
+    hist = w.loc[pd.Timestamp(start) : pd.Timestamp(end)]
+    if len(hist):
+        area = px.area(hist, title="Target weights at each month-end")
+        st.plotly_chart(
+            styled(area.update_layout(yaxis_tickformat=".0%")), use_container_width=True
+        )
+    st.caption(
+        "Min variance: long-only, fully invested, trailing 252-day sample covariance, "
+        "re-estimated each month-end and applied from the next day."
+    )
+
+with tab_stress:
+    st.subheader("Stress periods (SQL: sql/stress_periods.sql)")
+    stress = dashboard.stress_table()
+    st.dataframe(
+        stress.style.format(
+            {c: "{:.1f}%" for c in stress.columns if c not in ("start_date", "end_date")}
+        ),
+        use_container_width=True,
+    )
+    st.caption("Equal weight here is the stage 1 series from 2006; values are % returns.")
+    st.subheader("SPY correlation: calm vs stress (sql/correlation_by_regime.sql)")
+    rc = dashboard.regime_corr()
+    st.plotly_chart(
+        styled(px.bar(rc, barmode="group", color_discrete_sequence=[GREY, EMERALD]), 300),
+        use_container_width=True,
+    )
+    yb = dashboard.sql_result("stock_bond_corr_by_year").set_index("year")
+    fig = lines(
+        yb.rename(columns={"spy_tlt_corr": "SPY–TLT", "spy_agg_corr": "SPY–AGG"}),
+        "Stock–bond correlation by year (sql/stock_bond_corr_by_year.sql)",
+    )
+    st.plotly_chart(fig, use_container_width=True)
+    corr = d["asset_rets"].loc[rets.index].corr()
+    heat = px.imshow(
+        corr,
+        text_auto=".2f",
+        zmin=-1,
+        zmax=1,
+        color_continuous_scale=["#111827", EMERALD],
+        title="Daily ETF correlations (selected dates)",
+    )
+    st.plotly_chart(styled(heat, 420), use_container_width=True)
+
+st.caption(f"Data: {config.ROOT.name} · one historical path; see README for limitations.")
