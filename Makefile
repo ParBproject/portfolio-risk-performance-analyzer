@@ -1,5 +1,5 @@
 PY ?= python
-.PHONY: install data db results sql test lint app all
+.PHONY: install data db results sql test lint app all coverage
 install: ; $(PY) -m pip install -e ".[dev]"
 data: ; $(PY) -m prpa.ingest        # re-download (changes hashes; normally not needed)
 db: ; $(PY) -m prpa.db
@@ -9,3 +9,4 @@ test: ; pytest -q
 app: ; streamlit run app/streamlit_app.py
 sql: ; $(PY) scripts/run_queries.py
 all: results sql lint test
+coverage: ; pytest -q --cov=prpa --cov-report=term-missing

@@ -23,7 +23,7 @@ def backtest(
     Returns (net daily returns, log of each rebalance with turnover and cost).
     """
     target = target.reindex(returns.columns).astype(float)
-    if abs(target.sum() - 1) > 1e-9:
+    if target.isna().any() or abs(target.sum() - 1) > 1e-9:
         raise ValueError("target weights must sum to 1")
     rdates = set(rebalance_dates(returns.index, freq))
     c = cost_bps / 1e4

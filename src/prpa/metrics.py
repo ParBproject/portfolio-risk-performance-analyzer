@@ -28,7 +28,10 @@ def annualized_vol(r: pd.Series) -> float:
 def sharpe(r: pd.Series, rf: pd.Series | float = 0.0) -> float:
     """Annualized Sharpe: mean daily excess return / its std, times sqrt(252)."""
     ex = r - rf
-    return float(ex.mean() / ex.std(ddof=1) * np.sqrt(TRADING_DAYS))
+    sd = ex.std(ddof=1)
+    if not sd > 1e-12:  # constant excess returns: ratio undefined (avoid 1e16 from rounding)
+        return float("nan")
+    return float(ex.mean() / sd * np.sqrt(TRADING_DAYS))
 
 
 def drawdown(r: pd.Series) -> pd.Series:
@@ -50,6 +53,8 @@ def sortino(r: pd.Series, rf: pd.Series | float = 0.0) -> float:
     """
     ex = r - rf
     dd = np.sqrt((np.minimum(ex, 0.0) ** 2).mean())
+    if not dd > 1e-12:  # no downside days: ratio undefined
+        return float("nan")
     return float(ex.mean() / dd * np.sqrt(TRADING_DAYS))
 
 
