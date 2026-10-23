@@ -30,7 +30,9 @@
     "annualized_return": 0.07078148696696784,
     "annualized_vol": 0.11114297955403826,
     "sharpe": 0.5185995636578585,
+    "sortino": 0.7326825712552774,
     "max_drawdown": -0.32161737242257893,
+    "calmar": 0.2200797998995115,
     "max_drawdown_trough": "2009-03-09"
   },
   "spy": {
@@ -38,7 +40,9 @@
     "annualized_return": 0.11068830402554064,
     "annualized_vol": 0.19197166759483592,
     "sharpe": 0.5547643999669993,
+    "sortino": 0.7814997264124568,
     "max_drawdown": -0.5518944690664586,
+    "calmar": 0.20056063292819784,
     "max_drawdown_trough": "2009-03-09"
   },
   "per_asset": {
@@ -47,7 +51,9 @@
       "annualized_return": 0.11068830402554064,
       "annualized_vol": 0.19197166759483592,
       "sharpe": 0.5547643999669993,
+      "sortino": 0.7814997264124568,
       "max_drawdown": -0.5518944690664586,
+      "calmar": 0.20056063292819784,
       "max_drawdown_trough": "2009-03-09"
     },
     "EFA": {
@@ -55,7 +61,9 @@
       "annualized_return": 0.05600846426392425,
       "annualized_vol": 0.21295824084651627,
       "sharpe": 0.28301252473421024,
+      "sortino": 0.39558067099264765,
       "max_drawdown": -0.6103731209900025,
+      "calmar": 0.09176102671932965,
       "max_drawdown_trough": "2009-03-09"
     },
     "AGG": {
@@ -63,7 +71,9 @@
       "annualized_return": 0.028910599259902803,
       "annualized_vol": 0.052789669661747494,
       "sharpe": 0.24550158663823285,
+      "sortino": 0.3344396551049884,
       "max_drawdown": -0.18432926635180635,
+      "calmar": 0.15684215443425428,
       "max_drawdown_trough": "2022-10-20"
     },
     "TLT": {
@@ -71,7 +81,9 @@
       "annualized_return": 0.02430431687741863,
       "annualized_vol": 0.1474267869240888,
       "sharpe": 0.1216489267438095,
+      "sortino": 0.17316478452624984,
       "max_drawdown": -0.48351140557948014,
+      "calmar": 0.05026627417049309,
       "max_drawdown_trough": "2023-10-19"
     },
     "GLD": {
@@ -79,7 +91,9 @@
       "annualized_return": 0.09982351336027162,
       "annualized_vol": 0.18511955376666384,
       "sharpe": 0.5154312589906842,
+      "sortino": 0.7244000136984878,
       "max_drawdown": -0.45555012734879075,
+      "calmar": 0.21912739645409432,
       "max_drawdown_trough": "2015-12-17"
     },
     "VNQ": {
@@ -87,7 +101,9 @@
       "annualized_return": 0.06239380692992014,
       "annualized_vol": 0.28854131056684523,
       "sharpe": 0.29570746889999955,
+      "sortino": 0.42181142736626576,
       "max_drawdown": -0.730655219864812,
+      "calmar": 0.08539432174516515,
       "max_drawdown_trough": "2009-03-06"
     }
   },

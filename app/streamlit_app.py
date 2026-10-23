@@ -37,13 +37,23 @@ st.write(", ".join(f"{t} {1 / len(rets.columns):.1%} ({c})" for t, c in config.U
 
 rows = {"Equal weight": metrics.summary(port, rf), "SPY": metrics.summary(bench, rf)}
 tbl = pd.DataFrame(rows).T[
-    ["total_return", "annualized_return", "annualized_vol", "sharpe", "max_drawdown"]
+    [
+        "total_return",
+        "annualized_return",
+        "annualized_vol",
+        "sharpe",
+        "sortino",
+        "max_drawdown",
+        "calmar",
+    ]
 ]
 st.subheader("Risk summary")
 st.dataframe(
     tbl.style.format(
         {
             "sharpe": "{:.2f}",
+            "sortino": "{:.2f}",
+            "calmar": "{:.2f}",
             "total_return": "{:.1%}",
             "annualized_return": "{:.2%}",
             "annualized_vol": "{:.2%}",
@@ -80,7 +90,18 @@ st.plotly_chart(
     styled(fig.update_layout(title="Drawdown", yaxis_tickformat=".0%")), use_container_width=True
 )
 
-corr = rets.corr()
+rs = pd.DataFrame(
+    {
+        "Equal weight": metrics.rolling_sharpe(port, rf),
+        "SPY": metrics.rolling_sharpe(bench, rf),
+    }
+).dropna()
+fig = go.Figure()
+fig.add_scatter(x=rs.index, y=rs["Equal weight"], name="Equal weight", line_color=EMERALD)
+fig.add_scatter(x=rs.index, y=rs["SPY"], name="SPY", line_color="#9ca3af")
+st.plotly_chart(styled(fig.update_layout(title="Rolling 1-year Sharpe")), use_container_width=True)
+
+corr = metrics.correlation_matrix(rets)
 fig = px.imshow(
     corr,
     text_auto=".2f",

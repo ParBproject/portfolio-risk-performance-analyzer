@@ -2,7 +2,7 @@
 
 **Question:** how does a diversified ETF portfolio compare with an equity benchmark (SPY) in return, risk and drawdowns?
 
-Stage 1 of a staged build: real data pipeline → SQLite → equal-weight portfolio vs SPY → Streamlit dashboard. Stage 2 adds an analysis-ready SQL layer. (Minimum-variance optimisation comes later.)
+Stage 1 of a staged build: real data pipeline → SQLite → equal-weight portfolio vs SPY → Streamlit dashboard. Stage 2 adds an analysis-ready SQL layer; stage 3 adds Sortino, Calmar, beta and rolling metrics. (Minimum-variance optimisation comes later.)
 
 ![dashboard](docs/dashboard.png)
 
@@ -58,6 +58,30 @@ The price snapshot in `data/raw/` is frozen and verified against `data/manifest.
 - **Correlation regimes** (`correlation_by_regime.csv`, `stock_bond_corr_by_year.csv`): in stress windows SPY's correlation with EFA rose to 0.93 (calm 0.85) and with VNQ to 0.80 (0.69), so equity diversification weakens when it is needed most. TLT stayed negative (−0.40 stress, −0.25 calm). But the SPY–TLT correlation was negative every year 2007–2021 and **positive every year 2022–2026** (0.36 in 2026 YTD): the bond hedge has broken down in the inflation regime.
 
 Caveats: stress windows are fixed approximate SPY peak-to-trough dates (they are SPY-centric by construction), and correlations are descriptive, not tested for significance.
+
+## Stage 3: full metric set and rolling metrics
+`src/prpa/metrics.py` now also has Sortino, Calmar, beta, a correlation matrix and rolling return, volatility, Sharpe and correlation. Each one has a hand-checked test in `tests/test_metrics_stage3.py`. `python -m prpa.stage3` writes `results/stage3.json`.
+
+- **Sortino** = mean daily excess return ÷ downside deviation × √252. The downside deviation is √mean(min(excess, 0)²) over *all* days, with the T-bill rate as the target.
+- **Calmar** = annualised (geometric) return ÷ |max drawdown| over the full sample.
+- **Beta** = cov(portfolio, SPY) ÷ var(SPY), from daily returns.
+- **Rolling** windows are 252 trading days (1 year) for return, Sharpe and correlation, and 63 days for volatility. They stay NaN until the window is full.
+
+### Stage 3 findings (`results/stage3.json`, 2006-01-04 to 2026-09-30)
+| | Equal weight | SPY |
+|---|---|---|
+| Sharpe | 0.52 | 0.55 |
+| Sortino | 0.73 | 0.78 |
+| Calmar | 0.22 | 0.20 |
+| Beta vs SPY | 0.47 | 1.00 |
+
+- The ratios split. SPY was slightly ahead on Sharpe and Sortino, while the portfolio was slightly ahead on Calmar (return per unit of worst drawdown). None of these differences has been tested for significance, so none should be presented as a win.
+- **Rolling 1-year windows** (4,966 windows):
+  - The portfolio beat SPY on return in 33.2% of windows and on Sharpe in 46.4%.
+  - It lost money in 15.0% of windows, against 17.0% for SPY.
+  - Its worst 1-year return was −28.7% (window ending 2009-03-03), against −47.4% for SPY (ending 2009-03-05).
+  - Its best was +44.3% (ending 2010-03-09), against +77.5% for SPY (ending 2021-03-23).
+- **Rolling 1-year correlation with SPY** ranged from 0.32 (ending 2017-12-14) to 0.92 (ending 2008-10-30). The portfolio moved most like SPY during the 2008 crash, when diversification was needed most.
 
 ## Project layout
 `src/prpa/` (config, ingest, clean, db, metrics, portfolio, analysis) · `sql/` schema + queries · `data/raw/` frozen CSVs · `app/` Streamlit · `tests/` pytest.
