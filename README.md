@@ -1,5 +1,7 @@
 # Portfolio Risk & Performance Analyzer
 
+[![CI](https://github.com/ParBproject/portfolio-risk-performance-analyzer/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/ParBproject/portfolio-risk-performance-analyzer/actions/workflows/ci.yml)
+
 **Research question:** how does a diversified ETF portfolio compare with an equity benchmark (SPY) in return, risk and drawdowns?
 
 **Short answer, from this data:** over 2006–2026, an equal-weight six-ETF portfolio cut volatility by about 42% and the worst drawdown from −55% to −32%, at the cost of about 4 percentage points of return a year. Its Sharpe ratio was roughly the same as SPY's (0.52 vs 0.55). A minimum-variance portfolio lowered risk further, but it ended up mostly in bonds and had the *lowest* Sharpe of the three. Diversification bought lower risk, not better risk-adjusted return.
