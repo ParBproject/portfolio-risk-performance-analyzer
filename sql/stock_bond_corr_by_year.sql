@@ -1,4 +1,4 @@
--- Calendar-year daily correlation of SPY with TLT and AGG (does the bond hedge hold up?).
+-- Calendar-year daily correlation of SPY with TLT and with AGG.
 WITH x AS (
     SELECT substr(s.date, 1, 4) AS year, o.series AS other, s.ret AS a, o.ret AS b
     FROM v_returns s JOIN v_returns o ON o.date = s.date

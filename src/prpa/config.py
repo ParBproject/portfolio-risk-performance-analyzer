@@ -1,4 +1,4 @@
-"""Single place for every assumption, so each one is explicit and easy to defend."""
+"""Paths, universe and backtest settings."""
 
 from pathlib import Path
 

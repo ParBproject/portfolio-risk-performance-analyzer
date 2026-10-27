@@ -1,4 +1,4 @@
-"""Stage 1 analysis: equal-weight ETF portfolio vs SPY. Writes results/stage1.json."""
+"""Equal-weight ETF portfolio vs SPY. Writes results/stage1.json."""
 
 import json
 

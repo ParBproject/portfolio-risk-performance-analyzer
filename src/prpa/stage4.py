@@ -1,7 +1,7 @@
-"""Stage 4: rolling minimum-variance vs equal weight vs SPY. Writes results/stage4.json.
+"""Rolling minimum-variance vs equal weight vs SPY. Writes results/stage4.json.
 
-All three are evaluated on the same dates: from the day after the first month-end with a
-full 252-day estimation window.
+The three series share dates, starting the day after the first month-end with a
+full 252-day covariance window.
 """
 
 import json

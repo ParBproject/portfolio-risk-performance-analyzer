@@ -1,4 +1,4 @@
--- Peak, median-ish (average) and latest 63-day vol for the portfolio vs SPY.
+-- Average, peak and latest 63-day volatility for the portfolio and for SPY.
 WITH s AS (
     SELECT series, date, ret,
            ROW_NUMBER() OVER w AS rn,

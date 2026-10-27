@@ -7,15 +7,14 @@ import pandas as pd
 
 from prpa.portfolio import rebalance_dates
 
-WINDOW = 252  # trailing 1 year of daily returns (standard choice, not tuned)
+WINDOW = 252  # trailing year of daily returns
 
 
 def min_variance(cov: np.ndarray) -> np.ndarray:
-    """Exact solution of min w'Σw s.t. sum(w)=1, w>=0.
+    """Long-only minimum variance: min w'Σw s.t. sum(w)=1, w>=0.
 
-    The long-only optimum equals the unconstrained optimum (w ∝ Σ_S⁻¹1) on its own support S.
-    With few assets we can try every support and keep the feasible one with lowest variance.
-    6 assets -> 63 subsets, so this is exact, fast and needs no solver dependency.
+    On a support S the candidate is w ∝ Σ_S⁻¹ 1, kept only if every weight is non-negative.
+    Six assets means 63 subsets, so trying each one is an exact solve.
     """
     n = cov.shape[0]
     best, best_var = None, np.inf
