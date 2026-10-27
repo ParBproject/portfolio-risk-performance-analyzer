@@ -1,4 +1,4 @@
-"""Stage 6 audit: corrupted inputs, manifest and schema checks, edge cases, end-to-end."""
+"""Corrupted inputs, manifest and schema checks, edge cases, end-to-end rebuild."""
 
 import json
 import shutil

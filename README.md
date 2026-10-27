@@ -2,83 +2,74 @@
 
 [![CI](https://github.com/ParBproject/portfolio-risk-performance-analyzer/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/ParBproject/portfolio-risk-performance-analyzer/actions/workflows/ci.yml)
 
-**Research question:** how does a diversified ETF portfolio compare with an equity benchmark (SPY) in return, risk and drawdowns?
+A six-ETF portfolio against SPY, from January 2006 through September 2026: return, volatility, drawdowns, and a long-only minimum-variance variant.
 
-**Short answer, from this data:** over 2006–2026, an equal-weight six-ETF portfolio cut volatility by about 42% and the worst drawdown from −55% to −32%, at the cost of about 4 percentage points of return a year. Its Sharpe ratio was roughly the same as SPY's (0.52 vs 0.55). A minimum-variance portfolio lowered risk further, but it ended up mostly in bonds and had the *lowest* Sharpe of the three. Diversification bought lower risk, not better risk-adjusted return.
+Over the full sample the equal-weight portfolio (SPY, EFA, AGG, TLT, GLD, VNQ) had annualised volatility of 11.11% against SPY's 19.20% (about 42% lower) and a worst drawdown of −32.2% against −55.2%. Annualised return was 7.08% against 11.07%. Sharpe ratios were close, 0.52 and 0.55. The minimum-variance portfolio cut volatility further, to 5.38%, and held mostly bonds; its Sharpe was 0.35.
 
-Python · pandas · NumPy · SQLite · Plotly · Streamlit · pytest · ruff · MIT license. Real data only; no number in this README is invented, and each one cites the results file it comes from.
+**Dashboard:** https://parb-portfolio-analyzer.streamlit.app/
 
-**Interactive dashboard (Streamlit):** https://parb-portfolio-analyzer.streamlit.app/
-
-**Static demo:** https://parbproject.github.io/portfolio-risk-performance-analyzer/ (a static build of the results: risk table, growth, drawdown, rolling Sharpe, min-variance weights, stress periods; every number is generated from the committed results by `python -m prpa.site`).
+**Static pages:** https://parbproject.github.io/portfolio-risk-performance-analyzer/
 
 ![dashboard](docs/dashboard.png)
 
----
-
-## Contents
-1. [Setup](#setup)
-2. [Data](#data)
-3. [Methodology](#methodology)
-4. [Findings](#findings)
-5. [Limitations](#limitations)
-6. [Dashboard and screenshots](#dashboard-and-screenshots)
-7. [Tests](#tests)
-8. [Interview talking points](#interview-talking-points)
-9. [How to defend this project](#how-to-defend-this-project)
-10. [Project layout](#project-layout)
-
----
-
 ## Setup
+
 ```bash
 git clone https://github.com/ParBproject/portfolio-risk-performance-analyzer
 cd portfolio-risk-performance-analyzer
 python -m venv .venv && . .venv/bin/activate
 make install      # pip install -e ".[dev]"
-make all          # recompute every results file, build SQLite, run all SQL, ruff, pytest
-make app          # Streamlit dashboard at http://localhost:8501
-make coverage     # pytest with a coverage report
+make all          # rebuild results, run the SQL, ruff, pytest
+make app          # Streamlit at http://localhost:8501
+make coverage
 ```
-`make all` needs no network. It verifies the frozen snapshot in `data/raw/` against the SHA-256 hashes in `data/manifest.json` and fails if any file has changed. `make data` re-downloads from Yahoo, which changes the hashes and therefore the results.
+
+`make all` reads the CSVs in `data/raw/` and checks them against the SHA-256 hashes in `data/manifest.json`. `make data` downloads a fresh snapshot from Yahoo Finance, which changes the hashes and the results.
 
 ## Data
-| | |
+
+Yahoo Finance via `yfinance` (`auto_adjust=False`), downloaded 2026-10-23. Each ETF file has 5,218 rows from 2006-01-03 to 2026-09-30 (`results/sql/coverage.csv`).
+
+| Ticker | What it is |
 |---|---|
-| Source | Yahoo Finance via `yfinance` (`auto_adjust=False`), downloaded 2026-10-23 (`data/manifest.json`) |
-| Range | 2006-01-03 to 2026-09-30, 5,218 trading days per ETF (`results/sql/coverage.csv`) |
-| Universe | SPY (US large-cap equity), EFA (developed ex-US equity), AGG (US aggregate bonds), TLT (long Treasuries), GLD (gold), VNQ (US REITs) |
-| Risk-free | 13-week T-bill yield `^IRX`, ÷100 ÷252 per day; it averaged 1.69% a year (`results/stage1.json`) |
+| SPY | US large-cap equity, and the benchmark |
+| EFA | Developed markets ex-US equity |
+| AGG | US aggregate bonds |
+| TLT | Long-term US Treasuries |
+| GLD | Gold |
+| VNQ | US REITs |
 
-- **Dividends and splits:** returns are calculated from `Adj Close`, which Yahoo back-adjusts for splits and cash distributions. They are therefore *total* returns, which matters a great deal for bond and REIT ETFs. The raw `Close` is kept in SQLite for comparison.
-- **Missing values:** prices are aligned to SPY's calendar. Gaps of up to 3 days are forward-filled (a stale price counts as a zero return), and longer gaps are dropped rather than invented. This snapshot had **0** missing values (`results/stage1.json`, `cleaning`).
-- **Validation:** dates must be sorted and unique, prices must be positive with no NaNs left after cleaning, and no daily move may exceed 25%. A test checks that adjusted prices sit below raw prices for dividend payers.
+The risk-free series is the 13-week T-bill yield (`^IRX`), divided by 100 and by 252. It averaged 1.69% a year (`results/stage1.json`). `^IRX` is a discount yield, so this is an approximation of a daily rate.
 
-## Methodology
-**Stage 1: equal weight vs SPY.** Each ETF gets 1/6 of the portfolio. Weights drift with prices and are reset on the last trading day of every month. Costs are **10 bp one-way × turnover** at each rebalance, plus 10 bp on the initial purchase. SPY is buy-and-hold with no cost.
+Returns use `Adj Close`, which includes dividends and splits. Raw `Close` is kept in SQLite. Prices are aligned to SPY's calendar. Gaps of up to 3 days are forward-filled; longer gaps are dropped. This snapshot had no missing prices after that step (`results/stage1.json`, `cleaning`). Dates must be sorted and unique, prices must be positive, and a daily move above 25% fails validation.
 
-**Stage 2: SQL layer.** Tables `assets`, `prices`, `risk_free`, `strategy_returns` and `stress_periods`; views `v_returns`, `v_monthly`, `v_annual` and `v_drawdown`; 11 queries in `sql/`. `make sql` runs every query and saves the output to `results/sql/*.csv`. The SQL results are tested against independent pandas calculations.
+## Method
 
-**Stage 3: metrics** (`src/prpa/metrics.py`). All metrics use simple daily returns and 252 trading days a year.
+**Equal weight.** Each ETF starts at 1/6. Weights drift with prices and reset on the last trading day of the month. Cost is 10 bp one-way times turnover, including 10 bp on the first purchase. The SPY line in this comparison is buy-and-hold. Code: `src/prpa/portfolio.py`, `src/prpa/analysis.py`. Output: `results/stage1.json`.
+
+**Minimum variance.** At each month-end the weights are the long-only, fully invested minimum-variance portfolio on the trailing 252 daily returns. With six names that is an exact search over the 63 subsets. Weights apply from the next session, with the same 10 bp cost. Equal weight and SPY are recomputed on the same dates, 2007-02-01 to 2026-09-30, once a full window exists. Code: `src/prpa/optimize.py`, `src/prpa/stage4.py`.
+
+**Metrics** in `src/prpa/metrics.py` use simple daily returns and 252 days per year.
+
 | Metric | Definition |
 |---|---|
-| Annualised return | geometric: (1 + total)^(252/n) − 1 |
-| Annualised vol | sample std of daily returns × √252 |
-| Sharpe | mean(daily r − rf) ÷ std(daily r − rf) × √252 |
-| Sortino | mean excess ÷ √mean(min(excess, 0)²) × √252 (downside averaged over all days) |
-| Max drawdown | min of wealth ÷ running peak − 1 (starting $1 counts as a peak) |
-| Calmar | annualised return ÷ \|max drawdown\| |
-| Beta | cov(r, SPY) ÷ var(SPY) |
-| Rolling | 252-day return, Sharpe and correlation; 63-day vol |
+| Annualised return | (1 + total return) ^ (252 / n) − 1 |
+| Annualised vol | sample standard deviation × √252 |
+| Sharpe | mean(r − rf) / std(r − rf) × √252 |
+| Sortino | mean excess / √mean(min(excess, 0)²) × √252, with the downside taken over every day |
+| Max drawdown | min of wealth / running peak − 1; the peak starts at $1 |
+| Calmar | annualised return / \|max drawdown\| |
+| Beta | cov(r, SPY) / var(SPY) |
+| Rolling | 252-day return, Sharpe and correlation; 63-day volatility |
 
-**Stage 4: minimum variance.** At each month-end close, weights are re-estimated from the sample covariance of the **trailing 252 daily returns only** (a standard window, not tuned). The portfolio is long-only and fully invested, and the solve is exact: every one of the 63 asset subsets is tried. Weights are applied from the **next** trading day, with the same 10 bp costs. All three strategies are compared over the same dates, 2007-02-01 to 2026-09-30, after the first full estimation window.
+**SQL.** `make sql` loads `assets`, `prices`, `risk_free`, `strategy_returns` and `stress_periods`, builds `v_returns`, `v_monthly`, `v_annual` and `v_drawdown`, and writes `results/sql/*.csv`. The tests recompute the same figures in pandas.
 
-**Stage 5: dashboard.** Strategy selector, date filter, weights (current and over time), growth, drawdown, rolling Sharpe, risk table, and the stress and correlation views read from the SQL results.
+## Results
 
-**Stage 6: test audit.** Corrupted-input, manifest, schema, edge-case and end-to-end reproduction tests, with coverage reporting.
+### Equal weight and SPY, 2006-01-04 to 2026-09-30
 
-## Findings
-### 1. Equal weight vs SPY, 2006-01-04 to 2026-09-30 (`results/stage1.json`, `results/stage3.json`)
+`results/stage1.json` and `results/stage3.json`.
+
 | | Equal weight | SPY |
 |---|---|---|
 | Total return | 312.0% | 778.8% |
@@ -90,14 +81,19 @@ make coverage     # pytest with a coverage report
 | Calmar | 0.22 | 0.20 |
 | Beta vs SPY | 0.47 | 1.00 |
 
-- Both drawdowns bottomed on 2009-03-09. The portfolio's correlation with SPY was 0.81.
-- Average monthly turnover was 2.5%, and total cost drag was about 0.73% over 20 years (`results/stage1.json`).
-- SPY's daily correlation with each ETF: EFA 0.88, VNQ 0.74, GLD 0.07, AGG 0.00, TLT −0.30 (`results/stage1.json`). Bonds and gold did the diversifying; international stocks and REITs did not.
+Both drawdowns bottomed on 2009-03-09. Correlation of the portfolio with SPY was 0.81. Average monthly turnover was 2.5%, and the cost drag over the whole sample was about 0.73% (`results/stage1.json`).
 
-### 2. When diversification helped, and when it didn't (`results/sql/`)
-- **Up and down months** (`monthly_hit_rate.csv`): the portfolio beat SPY in 39.8% of 249 months. That was 74.4% of SPY's 82 down months but only 22.8% of its 167 up months.
-- **Calendar years** (`annual_summary.csv`): it beat SPY in 8 of 21 years (2026 is January to September only), including 2008 (−13.6% vs −36.8%). It trailed by 31.7 points in 2013. Its volatility was below SPY's in every year.
-- **Stress windows** (`stress_periods.csv`):
+Daily correlation of SPY with the other ETFs: EFA 0.88, VNQ 0.74, GLD 0.07, AGG 0.00, TLT −0.30.
+
+### Up months, down months, stress windows
+
+`results/sql/`.
+
+The portfolio beat SPY in 39.8% of 249 months (`monthly_hit_rate.csv`): 74.4% of SPY's 82 down months and 22.8% of its 167 up months.
+
+It beat SPY in 8 of 21 years (`annual_summary.csv`). 2026 in that file is January through September. In 2008 the portfolio returned −13.6% and SPY −36.8%. In 2013 the portfolio trailed by 31.7 percentage points. Portfolio volatility was below SPY's in every year in the file.
+
+Stress windows in `stress_periods.csv` (compounded return from the day after the start date through the end date):
 
 | Window | Equal weight | SPY | TLT | AGG |
 |---|---|---|---|---|
@@ -107,19 +103,24 @@ make coverage     # pytest with a coverage report
 | COVID 2020-02-19 → 2020-03-23 | −17.6% | −33.7% | +14.2% | −1.3% |
 | 2022 rate shock | −22.7% | −24.5% | −29.3% | −14.4% |
 
-- **The 2022 exception:** in the rate shock, bonds fell with stocks, so diversification barely helped (−22.7% vs −24.5%).
-- **Stock–bond correlation** (`stock_bond_corr_by_year.csv`): SPY–TLT was negative every year from 2007 to 2021 and positive every year from 2022 to 2026 (0.36 in 2026 so far).
-- **Crisis correlations** (`correlation_by_regime.csv`): in stress windows, SPY's correlation rose to 0.93 with EFA (0.85 in calm periods) and to 0.80 with VNQ (0.69). Equity diversification weakens exactly when it is needed.
-- **Drawdown duration** (`drawdown_episodes.csv`): SPY needed 1,777 days to recover from its 2007–09 drawdown, while the portfolio needed 667 days from its 2008–09 drawdown. In 2022, though, the portfolio took *longer* to recover than SPY (924 vs 710 days).
-- **Rolling volatility** (`rolling_vol_summary.csv`): 63-day volatility averaged 9.7% for the portfolio vs 16.5% for SPY, and peaked at 41.6% vs 74.3% in December 2008.
+In the 2022 window bonds fell with equities, and the equal-weight result (−22.7%) sits next to SPY (−24.5%). SPY–TLT daily correlation was negative in each year from 2007 through 2021 and positive in each year from 2022 through 2026 (0.36 in 2026 year-to-date) (`stock_bond_corr_by_year.csv`).
 
-### 3. Rolling 1-year view (`results/stage3.json`)
-- Across 4,966 rolling 1-year windows, the portfolio beat SPY on return in 33.2% of them and on Sharpe in 46.4%.
-- It lost money in 15.0% of windows, against 17.0% for SPY.
-- Worst 1-year return: −28.7% for the portfolio vs −47.4% for SPY. Best: +44.3% vs +77.5%.
-- The rolling correlation with SPY ranged from 0.32 (window ending 2017-12-14) to 0.92 (ending 2008-10-30).
+On stress days, correlation of SPY with EFA was 0.93, against 0.85 on other days, and with VNQ 0.80 against 0.69 (`correlation_by_regime.csv`).
 
-### 4. Minimum variance vs equal weight vs SPY, 2007-02-01 to 2026-09-30 (`results/stage4.json`, `results/stage4_weights.csv`)
+SPY took 1,777 days to recover the 2007–09 drawdown. The portfolio took 667 days to recover its 2008–09 drawdown, and 924 days to recover the 2022 drawdown, compared with 710 days for SPY (`drawdown_episodes.csv`).
+
+63-day volatility averaged 9.7% for the portfolio and 16.5% for SPY. The peaks were 41.6% and 74.3%, both in December 2008 (`rolling_vol_summary.csv`).
+
+### Rolling one-year windows
+
+`results/stage3.json`, 4,966 windows.
+
+The portfolio's one-year return was above SPY's in 33.2% of windows, and its one-year Sharpe was above SPY's in 46.4%. The portfolio return was negative in 15.0% of windows and SPY's in 17.0%. The worst window was −28.7% for the portfolio and −47.4% for SPY. The best was +44.3% and +77.5%. Rolling correlation with SPY ranged from 0.32 (window ending 2017-12-14) to 0.92 (ending 2008-10-30).
+
+### Minimum variance, 2007-02-01 to 2026-09-30
+
+`results/stage4.json`, `results/stage4_weights.csv`.
+
 | | Min variance | Equal weight | SPY |
 |---|---|---|---|
 | Annualised return | 3.31% | 6.59% | 10.89% |
@@ -129,24 +130,24 @@ make coverage     # pytest with a coverage report
 | Max drawdown | −19.7% | −32.2% | −55.2% |
 | Calmar | 0.17 | 0.20 | 0.20 |
 | Beta vs SPY | 0.09 | 0.47 | 1.00 |
-| Avg monthly turnover | 3.7% | 2.6% | none |
-| Total cost drag | 0.97% | 0.71% | none |
+| Avg monthly turnover | 3.7% | 2.6% | |
+| Total cost | 0.97% | 0.71% | |
 
-- **Mostly bonds:** minimum variance averaged **88.2% AGG**, with about 2.6 holdings above 1% at a time. The latest estimate (2026-09-30) is 100% AGG.
-- **Lowest risk, worst risk-adjusted return:** it had the lowest volatility and drawdown, but also the lowest Sharpe of the three. Its worst drawdown came in 2022, not 2008.
-- **Costs aren't the reason:** turnover was higher than equal weight's (its largest single rebalance was 95.8%), but costs were about 5 bp a year and don't explain the gap.
+The average AGG weight was 88.2%, and the average number of holdings above 1% was about 2.6. On 2026-09-30 the estimate is 100% AGG. The minimum-variance drawdown troughed on 2022-10-20. The largest single rebalance turned over 95.8%. Cost over the sample was 0.97%, about 5 bp a year, next to an annualised-return gap of roughly 3 percentage points versus equal weight.
 
 ## Limitations
-- **One historical path.** These are 20 years of one market history (falling rates until 2021, then the 2022 shock). It is not a forecast, and none of the Sharpe differences has been tested for statistical significance. With 0.52 vs 0.55, the difference is very likely noise.
-- **Survivorship and selection.** All six ETFs survived. The universe was chosen for asset-class coverage, but with hindsight about which ETFs exist.
-- **Data quality.** Yahoo is free, unaudited and revises adjusted history, which the frozen snapshot guards against. `^IRX` is a discount yield, used as an approximation.
-- **Simple costs.** Costs are a flat 10 bp one-way, with no bid-ask modelling, market impact, taxes or fund-fee differences (ETF expense ratios are already in the prices). SPY carries no trading cost in the comparison.
-- **Estimation risk.** The minimum-variance weights rest on a noisy 1-year sample covariance. No shrinkage or weight caps were applied, by design (no tuning).
-- **Stress windows** are fixed, approximate SPY peak-to-trough dates, so they are SPY-centric by construction. Correlations are descriptive.
-- **Dashboard dates slice** continuously run strategies rather than restarting them.
 
-## Dashboard and screenshots
-`make app` opens the dashboard. The sidebar has a strategy selector and date filters, and there are three tabs: **Performance** (risk table, growth of $1, drawdown, rolling Sharpe), **Weights** (current weights and month-end weights over time) and **Stress & correlation** (SQL stress windows, calm vs stress correlations, stock–bond correlation by year, ETF heatmap). The theme is dark/emerald, and the layout works on phones.
+- The sample is one path, 2006–2026, covering the decline in yields into 2021 and the 2022 bond sell-off. The Sharpe gap of 0.52 versus 0.55 is small.
+- The six ETFs all survived. They were chosen as one fund per asset class with history through 2008.
+- Yahoo revises adjusted history. The files here are hashed, and they are still a free vendor snapshot.
+- Costs are a flat 10 bp one-way. Spreads, impact and taxes are left out. ETF expense ratios are already in the prices. The SPY buy-and-hold line pays no trading cost.
+- The covariance is a one-year sample, with no shrinkage and no weight cap.
+- Stress dates are fixed windows around large SPY declines.
+- Changing the dashboard dates slices the stored return series. It does not rerun the backtest from the new start date.
+
+## Dashboard
+
+`make app` opens Streamlit. The sidebar picks strategies and a date range. Three tabs: Performance (risk table, growth of $1, drawdown, rolling Sharpe), Weights, and Stress & correlation.
 
 | | Desktop | Mobile |
 |---|---|---|
@@ -154,50 +155,31 @@ make coverage     # pytest with a coverage report
 | Weights | ![](docs/dashboard-desktop-weights.png) | ![](docs/dashboard-mobile-weights.png) |
 | Stress & correlation | ![](docs/dashboard-desktop-stress.png) | ![](docs/dashboard-mobile-stress.png) |
 
+`make site` rewrites `site/data.json` from the result files. The page plots week-ending samples of the daily series, plus the last day, so a trough that falls mid-week can look slightly shallower than the max-drawdown figure in the table.
+
 ## Tests
-`make all` runs ruff and pytest; `make coverage` adds a coverage report. The suite includes:
-- hand-checked metric cases (for example, +20% then −25% gives a −25% drawdown, and a 2-asset minimum-variance case with vols of 10% and 20% gives 0.8/0.2);
-- no-lookahead tests for both backtests and the weight estimates;
-- SQL-vs-pandas checks for every view and query;
-- data validation (hashes, manifest fields, schema constraints, a one-byte corruption, injected negative prices and duplicate dates, gap handling);
-- dashboard helpers plus a Streamlit `AppTest` smoke test;
-- an end-to-end test that regenerates every results file and requires a byte-for-byte match;
-- `tests/test_readme.py`, which checks that headline numbers in this README match the results files.
 
-The audit found two real edge-case bugs, both now fixed: Sharpe returned about 1e16 for constant returns, and a target weight missing an asset slipped past validation.
+`make all` runs ruff and pytest. `make coverage` adds a coverage report.
 
-## Interview talking points
-1. **The question and the honest answer.** "Diversification cut volatility by about 42% and the worst drawdown by about 23 points, but Sharpe was roughly unchanged. The benefit was risk reduction, not better risk-adjusted return."
-2. **Total returns.** "I used split- and dividend-adjusted closes. With raw closes, AGG's and VNQ's returns would be badly understated, because most of their return is income."
-3. **Reproducibility.** "The data is a frozen snapshot with SHA-256 hashes, and a test regenerates every results file and requires an exact match. Anyone can reproduce every number offline."
-4. **No lookahead.** "Minimum-variance weights use only the 252 days up to each month-end and apply from the next day. A test scrambles future returns and checks the past weights don't change."
-5. **No tuning.** "The 252-day window, monthly rebalancing and 10 bp costs were fixed up front. I never tried alternatives to get a better number."
-6. **Why minimum variance disappointed.** "It concentrates in the lowest-volatility asset, AGG at about 88% on average, so it's a bond fund with a small equity sleeve. Lowest volatility doesn't mean best Sharpe, and its worst drawdown was 2022, when bonds were the risk."
-7. **Regime dependence.** "The stock–bond correlation was negative every year from 2007 to 2021 and positive every year from 2022 to 2026. A 60/40-style hedge that worked for 15 years stopped working, which is why I'd stress-test any allocation rather than trust full-sample correlations."
-8. **SQL skills.** "Window functions for rolling vol, running peaks and drawdown episodes; compounding with exp(sum(ln(1+r))); Pearson correlation written out from sums. All of it is tested against pandas."
-9. **Engineering.** "A tested metrics module shared by the analysis, the dashboard and the README; 97% test coverage; a UI smoke test."
+Covered: metric examples (a +20% day then a −25% day is a −25% drawdown; uncorrelated assets with volatility 10% and 20% get weights 0.8 and 0.2), future-return checks on both backtests, SQL against pandas, hash and schema failures, a Streamlit `AppTest`, a rebuild of `results/stage1.json`, `stage3.json`, `stage4.json` and `stage4_weights.csv`, and `tests/test_readme.py`, which checks the figures in this file against those outputs.
 
-## How to defend this project
-- **"Your Sharpe difference is tiny, so is anything significant?"** No, and I don't claim it is. I report it as roughly equal. The robust findings are about risk: lower volatility, smaller drawdowns, and the 2022 failure of the bond hedge.
-- **"Isn't the asset list cherry-picked?"** It's one ETF per major asset class, all with history back to 2006 so the sample includes 2008. Survivorship is listed as a limitation, and I didn't add or drop assets after seeing results.
-- **"Why 252 days and monthly rebalancing?"** They are the standard defaults: one trading year and the most common institutional rebalance frequency. I deliberately didn't search over them, because the best of many windows would be overfit.
-- **"Are costs realistic?"** 10 bp one-way is conservative for liquid ETFs. Even so, total drag was under 1% over the period, so the conclusions don't depend on the cost assumption.
-- **"How do I know the numbers are right?"** Every metric has hand-calculated tests, the SQL is cross-checked against pandas, a corrupted byte fails the hash check, and the results files regenerate exactly from the frozen data.
-- **"What would you do next?"** Bootstrap or Jobson–Korkie tests on the Sharpe difference, covariance shrinkage (Ledoit–Wolf), risk parity, out-of-sample regime analysis, and a realistic bid-ask cost model. I would present each as a new experiment, not a fix to make results look better.
+A constant excess return makes the Sharpe denominator zero; that case returns NaN. A target weight that omits an asset is rejected.
 
-## Project layout
+## Layout
+
 ```
-src/prpa/      config, ingest, clean, db, metrics, portfolio, optimize,
-               analysis (stage 1), stage3, stage4, dashboard (app helpers), site (static demo)
-sql/           schema.sql, views.sql, 11 analysis queries
-scripts/       run_queries.py (runs every query -> results/sql/), deploy_pages.sh
-site/          static live demo (index.html, app.js, style.css, generated data.json)
-data/raw/      frozen Yahoo CSVs (+ data/manifest.json with SHA-256)
-results/       stage1.json, stage3.json, stage4.json, stage4_weights.csv, sql/*.csv
-app/           streamlit_app.py
-tests/         metrics, portfolio, data, SQL layer, min variance, dashboard, audit, README
-docs/          screenshots
+src/prpa/    config, ingest, clean, db, metrics, portfolio, optimize,
+             analysis, stage3, stage4, dashboard, site
+sql/         schema, views, queries
+scripts/     run_queries.py, deploy_pages.sh
+site/        index.html, app.js, style.css, data.json
+data/raw/    Yahoo CSVs and data/manifest.json
+results/     stage1.json, stage3.json, stage4.json, stage4_weights.csv, sql/
+app/         streamlit_app.py
+tests/
+docs/        screenshots
 ```
 
 ## License
+
 MIT. See [LICENSE](LICENSE).

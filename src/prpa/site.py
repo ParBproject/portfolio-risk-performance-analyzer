@@ -1,8 +1,7 @@
-"""Build a static results site (site/) from the committed snapshot and results files.
+"""Write site/data.json for the static pages.
 
-Every number on the page is read from results/*.json, results/*.csv, or recomputed from
-the frozen data/raw snapshot by the same code the Streamlit dashboard uses. Nothing is
-typed in by hand. Run: python -m prpa.site
+Series come from results/ and from the same helpers the Streamlit app uses.
+Run: python -m prpa.site
 """
 
 import json

@@ -1,4 +1,4 @@
-"""Hand-checked metric cases (numbers worked out on paper in the comments)."""
+"""Metric cases. The expected values are derived in the comments."""
 
 import numpy as np
 import pandas as pd

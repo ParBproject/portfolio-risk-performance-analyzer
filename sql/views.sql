@@ -1,7 +1,6 @@
 -- Analysis-ready layer. Built after schema.sql and data load (see prpa.db.build).
 
--- Stress windows: fixed calendar windows around well-known SPY sell-offs
--- (approximate peak-to-trough dates, chosen before looking at portfolio results).
+-- Stress windows: fixed dates around large SPY declines (approximate peak to trough).
 DROP TABLE IF EXISTS stress_periods;
 CREATE TABLE stress_periods (name TEXT PRIMARY KEY, start_date TEXT NOT NULL, end_date TEXT NOT NULL);
 INSERT INTO stress_periods VALUES

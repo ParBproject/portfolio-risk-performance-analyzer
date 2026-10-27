@@ -1,4 +1,4 @@
-"""Stage 4: minimum-variance optimiser and time-varying backtest."""
+"""Minimum-variance optimiser and the time-varying backtest."""
 
 import json
 

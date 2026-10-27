@@ -1,4 +1,4 @@
-"""Hand-checked cases for the stage 3 metrics."""
+"""Cases for Sortino, Calmar, beta and the rolling metrics."""
 
 import json
 

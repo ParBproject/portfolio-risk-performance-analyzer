@@ -1,4 +1,4 @@
-"""Stage 3: full metric set + rolling 1-year comparison. Writes results/stage3.json."""
+"""Sortino, Calmar, beta and a rolling one-year comparison. Writes results/stage3.json."""
 
 import json
 

@@ -130,7 +130,7 @@ with tab_stress:
         ),
         width="stretch",
     )
-    st.caption("Equal weight here is the stage 1 series from 2006; values are % returns.")
+    st.caption("Equal weight here is the full-sample series from 2006; values are % returns.")
     st.subheader("SPY correlation: calm vs stress (sql/correlation_by_regime.sql)")
     rc = dashboard.regime_corr()
     st.plotly_chart(
