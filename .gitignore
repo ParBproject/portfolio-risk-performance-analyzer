@@ -5,17 +5,4 @@ data/prices.sqlite
 .pytest_cache/
 .ruff_cache/
 
-# Local agent and editor files
-.cursor/
-.cursorrules
-AGENTS.md
-AGENT.md
-CLAUDE.md
-.claude/
-/PROMPT.md
-/PROMPTS.md
-/PLAN.md
-/NOTES.md
-*.plan.md
-/plans/
-/agent-notes/
+# Editors and operating systems
