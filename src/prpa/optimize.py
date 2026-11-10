@@ -58,16 +58,29 @@ def min_variance(cov: np.ndarray) -> np.ndarray:
                 if w_s is None:
                     continue
             else:
-                w_s = x / x.sum()
-            if (w_s < -1e-12).any():
+                total = float(x.sum())
+                scale = float(np.max(np.abs(x)))
+                # x = Σ^{-1} 1 is un-normalized. Reject a non-finite sum, or one
+                # that is ~0 next to ||x||: dividing by it yields Inf/NaN, and
+                # `w < -1e-12` does not see NaN. An absolute 1e-12 cut would drop
+                # a real solution when variances are large (the sum scales as 1/σ²).
+                if (
+                    not np.all(np.isfinite(x))
+                    or not np.isfinite(total)
+                    or not abs(total) > 1e-12 * scale
+                ):
+                    continue
+                w_s = x / total
+            if not np.all(np.isfinite(w_s)) or (w_s < -1e-12).any():
                 continue
             w = np.zeros(n)
             w[list(S)] = np.clip(w_s, 0, None)
-            if w.sum() <= 0:
+            total_w = float(w.sum())
+            if not np.isfinite(total_w) or total_w <= 0:
                 continue
-            w /= w.sum()
-            v = w @ cov @ w
-            if v < best_var - 1e-18:
+            w /= total_w
+            v = float(w @ cov @ w)
+            if np.isfinite(v) and v < best_var - 1e-18:
                 best, best_var = w, v
     if best is None:
         raise ValueError("no feasible long-only portfolio")

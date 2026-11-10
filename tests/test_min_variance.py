@@ -43,6 +43,41 @@ def test_riskless_asset_takes_the_whole_portfolio():
     assert float(w @ cov @ w) == pytest.approx(0.0, abs=1e-12)
 
 
+def test_perfect_positive_correlation_rejects_the_short():
+    # σ1=.2, σ2=.4, corr=+1. Σ = [[.04, .08], [.08, .16]] = .04 * [[1, 2], [2, 4]].
+    # Fully invested critical point is [2, -1], and [2, -1] @ Σ @ [2, -1] = 0.
+    # That short is not allowed. On w2=1-w1, variance = .04 * (2 - w1)^2,
+    # smallest for w1 in [0, 1] at w1=1: weights [1, 0], variance .04.
+    cov = np.array([[0.04, 0.08], [0.08, 0.16]])
+    short = np.array([2.0, -1.0])
+    assert float(short @ cov @ short) == pytest.approx(0.0, abs=1e-12)
+    w = min_variance(cov)
+    np.testing.assert_allclose(w, [1.0, 0.0], atol=1e-12)
+    assert float(w @ cov @ w) == pytest.approx(0.04)
+
+
+def test_zero_inverse_sum_falls_back_to_the_lower_variance_asset():
+    # Σ @ [1, -1] = [1, 1], so the invertible solution sums to 0 and must not be
+    # divided through (that yields Inf). Variance along w=[t, 1-t] is 3t - 1,
+    # minimized at t=0: weights [0, 1], variance -1.
+    cov = np.array([[2.0, 1.0], [0.0, -1.0]])
+    x = np.linalg.solve(cov, np.ones(2))
+    assert float(x.sum()) == pytest.approx(0.0, abs=1e-12)
+    w = min_variance(cov)
+    assert np.all(np.isfinite(w))
+    np.testing.assert_allclose(w, [0.0, 1.0], atol=1e-12)
+    assert float(w @ cov @ w) == pytest.approx(-1.0)
+
+
+def test_small_inverse_sum_keeps_the_normalized_solution():
+    # Σ = 1e16 I. Σ^{-1} 1 = 1e-16 * [1, 1], which sums to 2e-16. The normalized
+    # weights are still [1/2, 1/2], and that variance is half of either asset alone.
+    cov = 1e16 * np.eye(2)
+    x = np.linalg.solve(cov, np.ones(2))
+    assert abs(float(x.sum())) < 1e-12
+    np.testing.assert_allclose(min_variance(cov), [0.5, 0.5])
+
+
 def test_perfect_hedge_splits_evenly():
     # Σ = v [[1, -1], [-1, 1]] (perfect negative hedge). w = [1/2, 1/2] has variance 0,
     # against v for either asset alone.
