@@ -60,7 +60,10 @@ def sortino(r: pd.Series, rf: pd.Series | float = 0.0) -> float:
 
 def calmar(r: pd.Series) -> float:
     """Annualized (geometric) return / |max drawdown| over the same sample."""
-    return float(annualized_return(r) / abs(max_drawdown(r)))
+    dd = abs(max_drawdown(r))
+    if not dd > 1e-12:  # no drawdown: ratio undefined (same convention as Sharpe)
+        return float("nan")
+    return float(annualized_return(r) / dd)
 
 
 def beta(r: pd.Series, bench: pd.Series) -> float:

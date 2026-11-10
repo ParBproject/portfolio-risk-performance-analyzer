@@ -10,11 +10,41 @@ from prpa.portfolio import rebalance_dates
 WINDOW = 252  # trailing year of daily returns
 
 
+def _min_var_sum_to_one(sub: np.ndarray) -> np.ndarray | None:
+    """Minimum-variance weights that sum to 1. Short sales are allowed.
+
+    For a singular block the inverse formula does not apply (a riskless asset, or
+    two assets that hedge each other). Write w = w0 + Z c with 1'Z = 0 and
+    minimize the quadratic in c. Returns None if that problem has no finite solution.
+    """
+    k = sub.shape[0]
+    if k == 1:
+        return np.ones(1)
+    w0 = np.zeros(k)
+    w0[0] = 1.0
+    z = np.vstack([-np.ones((1, k - 1)), np.eye(k - 1)])
+    gram = z.T @ sub @ z
+    linear = z.T @ sub @ w0
+    try:
+        coeff = np.linalg.solve(gram, -linear)
+    except np.linalg.LinAlgError:
+        coeff, _, _, _ = np.linalg.lstsq(gram, -linear, rcond=None)
+    if not np.all(np.isfinite(coeff)):
+        return None
+    weights = w0 + z @ coeff
+    total = float(weights.sum())
+    if not np.all(np.isfinite(weights)) or not total > 1e-12:
+        return None
+    return weights / total
+
+
 def min_variance(cov: np.ndarray) -> np.ndarray:
     """Long-only minimum variance: min w'Σw s.t. sum(w)=1, w>=0.
 
-    On a support S the candidate is w ∝ Σ_S⁻¹ 1, kept only if every weight is non-negative.
-    Six assets means 63 subsets, so trying each one is an exact solve.
+    On a support S the candidate sums to 1 and is kept only if every weight is
+    non-negative. Invertible blocks use w ∝ Σ_S⁻¹ 1. A singular block is minimized
+    on the sum-to-one plane instead of being dropped. Six assets means 63 subsets,
+    so trying each one is an exact solve.
     """
     n = cov.shape[0]
     best, best_var = None, np.inf
@@ -24,16 +54,23 @@ def min_variance(cov: np.ndarray) -> np.ndarray:
             try:
                 x = np.linalg.solve(sub, np.ones(k))
             except np.linalg.LinAlgError:
-                continue
-            w_s = x / x.sum()
+                w_s = _min_var_sum_to_one(sub)
+                if w_s is None:
+                    continue
+            else:
+                w_s = x / x.sum()
             if (w_s < -1e-12).any():
                 continue
             w = np.zeros(n)
             w[list(S)] = np.clip(w_s, 0, None)
+            if w.sum() <= 0:
+                continue
             w /= w.sum()
             v = w @ cov @ w
             if v < best_var - 1e-18:
                 best, best_var = w, v
+    if best is None:
+        raise ValueError("no feasible long-only portfolio")
     return best
 
 

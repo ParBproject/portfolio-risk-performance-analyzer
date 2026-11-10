@@ -23,6 +23,54 @@ def test_two_asset_with_correlation_hand_case():
     np.testing.assert_allclose(min_variance(cov), [1.0, 0.0], atol=1e-12)
 
 
+def test_two_asset_interior_correlation_hand_case():
+    # s1^2=.04, s2^2=.01, c=.005 -> w1 = (.01-.005)/(.04+.01-2*.005) = .005/.04 = .125
+    cov = np.array([[0.04, 0.005], [0.005, 0.01]])
+    np.testing.assert_allclose(min_variance(cov), [0.125, 0.875])
+
+
+def test_three_uncorrelated_assets_closed_form():
+    # w_i ∝ 1/σ_i^2 with σ^2 = .01, .04, .16 -> 100, 25, 6.25 over 131.25
+    cov = np.diag([0.01, 0.04, 0.16])
+    np.testing.assert_allclose(min_variance(cov), np.array([100, 25, 6.25]) / 131.25)
+
+
+def test_riskless_asset_takes_the_whole_portfolio():
+    # The second asset is riskless, so its covariance row is 0. Long-only GMV is 100% there.
+    cov = np.array([[0.04, 0.0], [0.0, 0.0]])
+    w = min_variance(cov)
+    np.testing.assert_allclose(w, [0.0, 1.0], atol=1e-12)
+    assert float(w @ cov @ w) == pytest.approx(0.0, abs=1e-12)
+
+
+def test_perfect_hedge_splits_evenly():
+    # Σ = v [[1, -1], [-1, 1]] (perfect negative hedge). w = [1/2, 1/2] has variance 0,
+    # against v for either asset alone.
+    cov = np.array([[0.04, -0.04], [-0.04, 0.04]])
+    w = min_variance(cov)
+    np.testing.assert_allclose(w, [0.5, 0.5], atol=1e-12)
+    assert float(w @ cov @ w) == pytest.approx(0.0, abs=1e-12)
+
+
+def test_hedge_gets_nothing_from_an_extra_risky_asset():
+    # Assets 1 and 2 cancel; asset 3 is uncorrelated with variance .09.
+    # w = [1/2, 1/2, 0] has variance 0, so the risky asset is not held.
+    cov = np.array([[0.04, -0.04, 0.0], [-0.04, 0.04, 0.0], [0.0, 0.0, 0.09]])
+    w = min_variance(cov)
+    np.testing.assert_allclose(w, [0.5, 0.5, 0.0], atol=1e-12)
+    assert float(w @ cov @ w) == pytest.approx(0.0, abs=1e-12)
+
+
+def test_all_riskless_assets_are_feasible():
+    # Every fully invested portfolio has variance 0. Skipping the singular blocks used to
+    # return None; any long-only weights that sum to 1 are optimal.
+    cov = np.zeros((3, 3))
+    w = min_variance(cov)
+    assert w.sum() == pytest.approx(1.0)
+    assert (w >= -1e-12).all()
+    assert float(w @ cov @ w) == pytest.approx(0.0, abs=1e-12)
+
+
 def test_long_only_binds_when_unconstrained_wants_short():
     # rho=.9: unconstrained w1 = (.04-.018)/(.05-.036) > 1 -> long-only gives [1, 0]
     cov = np.array([[0.01, 0.018], [0.018, 0.04]])
@@ -61,6 +109,22 @@ def test_real_weights_sum_to_one_and_non_negative(real):
 def test_first_estimate_needs_full_window(real):
     rets, w = real
     assert rets.index.get_loc(w.index[0]) + 1 >= 252
+
+
+def test_rolling_window_is_the_trailing_year_ending_that_day():
+    # Each month-end row is the minimum-variance portfolio of the 252 returns ending
+    # that day (inclusive). Shifting the window by one day would change the covariance.
+    idx = pd.bdate_range("2018-01-01", periods=400)
+    rng = np.random.default_rng(0)
+    rets = pd.DataFrame(rng.normal(0, [0.01, 0.02], size=(400, 2)), index=idx, columns=["A", "B"])
+    w = rolling_min_variance(rets, window=252)
+    assert len(w) > 0
+    for d, row in w.iterrows():
+        i = rets.index.get_loc(d)
+        hist = rets.iloc[i - 251 : i + 1]
+        assert len(hist) == 252 and hist.index[-1] == d
+        expected = min_variance(hist.cov().values)
+        np.testing.assert_allclose(row.to_numpy(), expected, atol=1e-12)
 
 
 def test_no_lookahead_future_data_does_not_change_weights(real):
