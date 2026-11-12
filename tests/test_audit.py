@@ -275,6 +275,11 @@ def test_sortino_no_downside_is_nan():
     assert np.isnan(metrics.sortino(s([0.01, 0.02, 0.03])))
 
 
+def test_calmar_no_drawdown_is_nan():
+    # Strictly rising wealth: max drawdown is 0, so return / |drawdown| is undefined.
+    assert np.isnan(metrics.calmar(s([0.01, 0.02, 0.03])))
+
+
 def _assert_json_close(a, b, path="$", rtol=1e-12, atol=1e-12):
     """Recursive compare: floats within rtol/atol; strings, ints, bools, keys, structure exact."""
     if isinstance(a, float) or isinstance(b, float):

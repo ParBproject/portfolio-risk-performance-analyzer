@@ -33,6 +33,23 @@ def test_drift_then_rebalance_cost_hand_case():
     assert net.iloc[3] == pytest.approx(0.0)
 
 
+def test_rebalance_cost_comes_off_end_of_day_wealth():
+    # Thu 2021-01-28 and Fri 2021-01-29 (month-end). Start 50/50, cost 10 bp.
+    # Day 1: +10% / -10%. Gross 0, drift to .55 / .45, initial cost 10 bp -> net -0.001.
+    # Day 2: +20% / 0. Gross = .55 * .20 = .11.
+    #   End weight on A = .55 * 1.20 / 1.11 = .66 / 1.11 = 22/37.
+    #   Turnover back to 50/50 = 2 * |1/2 - 22/37| = 7/37.
+    #   Cost is that fraction of end-of-day wealth:
+    #   net = 1.11 * (1 - (7/37) * 10 bp) - 1.
+    idx = pd.bdate_range("2021-01-28", periods=2)
+    rets = pd.DataFrame([[0.10, -0.10], [0.20, 0.00]], index=idx, columns=["A", "B"])
+    net, log = backtest(rets, equal_weights("AB"), cost_bps=10)
+    turnover = 7 / 37
+    assert net.iloc[0] == pytest.approx(-0.001)
+    assert log.loc[idx[1], "turnover"] == pytest.approx(turnover)
+    assert net.iloc[1] == pytest.approx(1.11 * (1 - turnover * 10 / 1e4) - 1)
+
+
 def test_weights_must_sum_to_one():
     with pytest.raises(ValueError):
         backtest(frame([[0.0, 0.0]]), pd.Series({"A": 0.6, "B": 0.6}))

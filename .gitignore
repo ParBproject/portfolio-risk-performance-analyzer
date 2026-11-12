@@ -6,3 +6,6 @@ data/prices.sqlite
 .ruff_cache/
 
 # Editors and operating systems
+
+# Coverage databases (pytest --cov)
+.coverage
