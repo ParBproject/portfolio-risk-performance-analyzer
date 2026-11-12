@@ -60,14 +60,15 @@ def min_variance(cov: np.ndarray) -> np.ndarray:
             else:
                 total = float(x.sum())
                 scale = float(np.max(np.abs(x)))
-                # x = Σ^{-1} 1 is un-normalized. Reject a non-finite sum, or one
-                # that is ~0 next to ||x||: dividing by it yields Inf/NaN, and
-                # `w < -1e-12` does not see NaN. An absolute 1e-12 cut would drop
-                # a real solution when variances are large (the sum scales as 1/σ²).
+                # x = Σ^{-1} 1 is un-normalized. The sum has to be positive and not
+                # tiny next to ||x||. Zero yields Inf/NaN, which `w < -1e-12` does
+                # not see. A negative sum is not a minimum and can select a
+                # negative-variance asset. An absolute 1e-12 cut would drop a real
+                # solution when variances are large (the sum scales as 1/σ²).
                 if (
                     not np.all(np.isfinite(x))
                     or not np.isfinite(total)
-                    or not abs(total) > 1e-12 * scale
+                    or not total > 1e-12 * scale
                 ):
                     continue
                 w_s = x / total

@@ -56,6 +56,20 @@ def test_perfect_positive_correlation_rejects_the_short():
     assert float(w @ cov @ w) == pytest.approx(0.04)
 
 
+def test_zero_inverse_sum_skips_the_full_set():
+    # Σ = diag(1, 1, -1/2), symmetric and invertible. Σ^{-1} 1 = [1, 1, -2]
+    # sums to 0, so the full set is not divided through. The third asset has
+    # variance -1/2 and is not used. The first two are 50/50 with variance 1/2,
+    # which is below either of those singletons (variance 1).
+    cov = np.diag([1.0, 1.0, -0.5])
+    x = np.linalg.solve(cov, np.ones(3))
+    np.testing.assert_allclose(x, [1.0, 1.0, -2.0])
+    assert float(x.sum()) == pytest.approx(0.0, abs=1e-12)
+    w = min_variance(cov)
+    np.testing.assert_allclose(w, [0.5, 0.5, 0.0], atol=1e-12)
+    assert float(w @ cov @ w) == pytest.approx(0.5)
+
+
 def test_small_inverse_sum_keeps_the_normalized_solution():
     # Σ = 1e16 I. Σ^{-1} 1 = 1e-16 * [1, 1], which sums to 2e-16. The normalized
     # weights are still [1/2, 1/2], and that variance is half of either asset alone.
